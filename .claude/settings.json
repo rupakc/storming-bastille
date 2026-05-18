@@ -1,0 +1,17 @@
+{
+  "project": "storming-bastille",
+  "permissions": {
+    "allow": [
+      "Bash(uv sync*)",
+      "Bash(uv run pytest*)",
+      "Bash(uv run ruff*)",
+      "Bash(uv run uvicorn*)",
+      "Bash(bun install*)",
+      "Bash(bun dev*)",
+      "Bash(bun run build*)",
+      "Bash(curl*)",
+      "Bash(bash start.sh*)",
+      "Bash(bash stop.sh*)"
+    ]
+  }
+}

@@ -1,0 +1,74 @@
+[
+  {
+    "id": "french-revolution-enlightenment",
+    "text": "How did Enlightenment philosophy lead to the French Revolution?",
+    "category": "Revolutions",
+    "description": "Trace the intellectual origins of 1789, from Voltaire and Rousseau to the storming of the Bastille."
+  },
+  {
+    "id": "american-revolution-cascade",
+    "text": "What chain of events led from the Stamp Act to American independence?",
+    "category": "Revolutions",
+    "description": "Follow the escalating colonial crisis from taxation disputes to the Declaration of Independence."
+  },
+  {
+    "id": "wwi-to-wwii",
+    "text": "What chain of events connected World War I to World War II?",
+    "category": "Wars",
+    "description": "Explore how the Treaty of Versailles, economic collapse, and political extremism made a second world war inevitable."
+  },
+  {
+    "id": "assassination-wwi",
+    "text": "How did the assassination of Archduke Franz Ferdinand escalate into a world war?",
+    "category": "Wars",
+    "description": "Unravel the alliance systems, mobilization plans, and diplomatic failures of July 1914."
+  },
+  {
+    "id": "fall-of-rome",
+    "text": "How did the fall of Rome reshape European civilization?",
+    "category": "Empires",
+    "description": "Examine the military, economic, and cultural forces that ended Rome and birthed medieval Europe."
+  },
+  {
+    "id": "ottoman-decline",
+    "text": "What caused the gradual decline of the Ottoman Empire?",
+    "category": "Empires",
+    "description": "Trace centuries of military setbacks, institutional rigidity, and nationalist movements that dismantled a superpower."
+  },
+  {
+    "id": "silk-road-modern-world",
+    "text": "How did the Silk Road shape the modern world?",
+    "category": "Trade & Economy",
+    "description": "Follow the flow of goods, ideas, religions, and diseases along history's most famous trade network."
+  },
+  {
+    "id": "great-depression-causes",
+    "text": "What combination of factors caused the Great Depression?",
+    "category": "Trade & Economy",
+    "description": "Analyze the interplay of speculation, bank failures, trade policy, and monetary decisions that triggered global collapse."
+  },
+  {
+    "id": "renaissance-emergence",
+    "text": "How did the Renaissance emerge from the Dark Ages?",
+    "category": "Cultural",
+    "description": "Discover how trade wealth, classical rediscovery, and patronage ignited Europe's cultural rebirth."
+  },
+  {
+    "id": "printing-press-reformation",
+    "text": "How did the printing press fuel the Protestant Reformation?",
+    "category": "Cultural",
+    "description": "Explore how Gutenberg's invention amplified Martin Luther's ideas and shattered religious unity in Europe."
+  },
+  {
+    "id": "seven-years-war",
+    "text": "How did the Seven Years' War reshape the global balance of power?",
+    "category": "Geopolitical",
+    "description": "Examine how this first true world war redrew colonial maps and planted seeds of revolution."
+  },
+  {
+    "id": "cold-war-origins",
+    "text": "What were the root causes of the Cold War?",
+    "category": "Geopolitical",
+    "description": "Trace how wartime allies became superpower rivals through ideology, atomic weapons, and competing visions of world order."
+  }
+]

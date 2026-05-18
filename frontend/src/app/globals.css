@@ -1,0 +1,263 @@
+@import "tailwindcss";
+
+@theme {
+  /* Warm cream palette */
+  --color-cream-50: #fefdfb;
+  --color-cream-100: #fdf8f0;
+  --color-cream-200: #f9eed9;
+  --color-cream-300: #f3e0be;
+  --color-cream-400: #e8c992;
+  --color-cream-500: #d4a96a;
+
+  /* Muted blues */
+  --color-slate-blue-50: #f0f3f8;
+  --color-slate-blue-100: #dce3ef;
+  --color-slate-blue-200: #b8c7df;
+  --color-slate-blue-300: #8da5c9;
+  --color-slate-blue-400: #6a84b0;
+  --color-slate-blue-500: #4f6894;
+  --color-slate-blue-600: #3d5178;
+  --color-slate-blue-700: #2f3f5c;
+  --color-slate-blue-800: #232e42;
+  --color-slate-blue-900: #1a2233;
+
+  /* Golden accents */
+  --color-gold-300: #f0d68a;
+  --color-gold-400: #e6c05c;
+  --color-gold-500: #d4a934;
+  --color-gold-600: #b8922a;
+
+  /* Category colors */
+  --color-cat-political: #4a7fc4;
+  --color-cat-economic: #5a9e6f;
+  --color-cat-social: #d4903a;
+  --color-cat-military: #c45a5a;
+  --color-cat-cultural: #8b6baf;
+
+  /* Fonts */
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-body: "Inter", system-ui, sans-serif;
+}
+
+:root {
+  --bg-primary: var(--color-cream-50);
+  --bg-secondary: var(--color-cream-100);
+  --bg-card: #ffffff;
+  --bg-card-hover: var(--color-cream-100);
+  --text-primary: var(--color-slate-blue-900);
+  --text-secondary: var(--color-slate-blue-600);
+  --text-muted: var(--color-slate-blue-400);
+  --border-color: var(--color-cream-300);
+  --border-subtle: var(--color-cream-200);
+  --accent: var(--color-gold-500);
+  --accent-hover: var(--color-gold-600);
+  --shadow-color: 30 20% 70%;
+}
+
+.dark {
+  --bg-primary: #0f1623;
+  --bg-secondary: #1a2233;
+  --bg-card: #1e2a3e;
+  --bg-card-hover: #253450;
+  --text-primary: #e8e0d4;
+  --text-secondary: #9ca8be;
+  --text-muted: #6b7a92;
+  --border-color: #2a3a52;
+  --border-subtle: #1e2e44;
+  --accent: var(--color-gold-400);
+  --accent-hover: var(--color-gold-500);
+  --shadow-color: 220 40% 10%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* React Flow overrides */
+.react-flow__node {
+  font-family: var(--font-body);
+}
+
+.react-flow__node:hover {
+  z-index: 1000 !important;
+}
+
+.react-flow__attribution {
+  display: none;
+}
+
+/* Markdown prose styling */
+.narrative-prose h1,
+.narrative-prose h2,
+.narrative-prose h3,
+.narrative-prose h4 {
+  font-family: var(--font-display);
+  color: var(--text-primary);
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+.narrative-prose h1 { font-size: 1.75rem; }
+.narrative-prose h2 { font-size: 1.4rem; }
+.narrative-prose h3 { font-size: 1.15rem; }
+
+.narrative-prose p {
+  margin-bottom: 1em;
+  line-height: 1.75;
+}
+
+.narrative-prose ul, .narrative-prose ol {
+  margin-bottom: 1em;
+  padding-left: 1.5em;
+}
+
+.narrative-prose li {
+  margin-bottom: 0.35em;
+  line-height: 1.65;
+}
+
+.narrative-prose blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 1em;
+  margin: 1.25em 0;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.narrative-prose code {
+  background: var(--bg-secondary);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.narrative-prose pre {
+  background: var(--bg-secondary);
+  padding: 1em;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.narrative-prose pre code {
+  background: none;
+  padding: 0;
+}
+
+.narrative-prose a {
+  color: var(--color-cat-political);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.narrative-prose strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Animated cursor for streaming */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.streaming-cursor::after {
+  content: "\2588";
+  animation: blink 1s step-end infinite;
+  color: var(--accent);
+  margin-left: 2px;
+}
+
+/* Category badge base */
+.category-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.15em 0.5em;
+  border-radius: 4px;
+}
+
+/* Skeleton animation */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-secondary) 25%,
+    var(--bg-card-hover) 50%,
+    var(--bg-secondary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+/* React Flow edge animation */
+@keyframes flow-dots {
+  0% { stroke-dashoffset: 24; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.animated-edge {
+  stroke-dasharray: 5 5;
+  animation: flow-dots 1s linear infinite;
+}
+
+/* Causal edge animated flow */
+@keyframes causal-flow {
+  0% { stroke-dashoffset: 20; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.causal-edge-animated {
+  animation: causal-flow 1.2s linear infinite;
+}
+
+/* Event node styling */
+.event-node {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.event-node:hover {
+  transform: translateY(-1px);
+}
+
+/* React Flow node focus ring override */
+.react-flow__node.selected .event-node {
+  ring-color: var(--accent);
+}
