@@ -4,7 +4,7 @@ variable "app_name"   { type = string }
 
 resource "google_storage_bucket" "sqlite_backup" {
   project                     = var.project_id
-  name                        = "${var.project_id}-${var.app_name}-data"
+  name                        = "${var.project_id}-sqlite-backup"
   location                    = var.region
   uniform_bucket_level_access = true
   force_destroy               = true
