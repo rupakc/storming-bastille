@@ -138,9 +138,13 @@ jobs:
           NEXT_PUBLIC_API_URL: "__NEXT_PUBLIC_API_URL__"
 
       # ── Trivy security gate ──────────────────────────────────────────────
-      # Images are not pushed until both pass. CRITICAL or HIGH CVEs fail the job.
+      # Both images scanned independently (continue-on-error) so both SARIFs are
+      # always produced for GitHub Security upload. The explicit gate step below
+      # blocks the push if either scan found fixable CRITICAL/HIGH CVEs.
       - name: Trivy scan — backend
+        id: trivy-backend
         uses: aquasecurity/trivy-action@master
+        continue-on-error: true
         with:
           image-ref: ${{ env.REGISTRY }}/backend:${{ github.sha }}
           format: sarif
@@ -150,7 +154,9 @@ jobs:
           exit-code: "1"
 
       - name: Trivy scan — frontend
+        id: trivy-frontend
         uses: aquasecurity/trivy-action@master
+        continue-on-error: true
         with:
           image-ref: ${{ env.REGISTRY }}/frontend:${{ github.sha }}
           format: sarif
@@ -172,6 +178,15 @@ jobs:
         with:
           sarif_file: trivy-frontend.sarif
           category: trivy-frontend
+
+      # ── Gate: fail before push if any fixable CVEs found ────────────────
+      - name: Fail if any image has fixable HIGH/CRITICAL CVEs
+        run: |
+          if [ "${{ steps.trivy-backend.outcome }}" = "failure" ] || \
+             [ "${{ steps.trivy-frontend.outcome }}" = "failure" ]; then
+            echo "One or more images have fixable HIGH/CRITICAL CVEs — push blocked"
+            exit 1
+          fi
 
       # ── Push only after scan passes ──────────────────────────────────────
       - name: Push backend image

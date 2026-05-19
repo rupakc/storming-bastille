@@ -326,8 +326,12 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: "http://localhost:8000"
 
-      - name: Scan backend image (CRITICAL + HIGH → fail)
+      # Run both scans independently so frontend always produces a SARIF
+      # even if backend has findings — exit-code is checked in a gate step below
+      - name: Scan backend image
+        id: trivy-backend
         uses: aquasecurity/trivy-action@master
+        continue-on-error: true
         with:
           image-ref: scan-backend:ci
           format: sarif
@@ -336,8 +340,10 @@ jobs:
           ignore-unfixed: true
           exit-code: "1"
 
-      - name: Scan frontend image (CRITICAL + HIGH → fail)
+      - name: Scan frontend image
+        id: trivy-frontend
         uses: aquasecurity/trivy-action@master
+        continue-on-error: true
         with:
           image-ref: scan-frontend:ci
           format: sarif
@@ -359,3 +365,12 @@ jobs:
         with:
           sarif_file: trivy-frontend.sarif
           category: trivy-frontend
+
+      - name: Fail if any image has fixable HIGH/CRITICAL CVEs
+        if: always()
+        run: |
+          if [ "${{ steps.trivy-backend.outcome }}" = "failure" ] || \
+             [ "${{ steps.trivy-frontend.outcome }}" = "failure" ]; then
+            echo "One or more images have fixable HIGH/CRITICAL CVEs — see GitHub Security tab"
+            exit 1
+          fi

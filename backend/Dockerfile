@@ -9,7 +9,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv for fast, reproducible dependency installs
-RUN pip install --no-cache-dir uv
+# Upgrade pip first to avoid CVEs in the bundled pip version
+RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir uv
 
 # Install Python dependencies first (layer cache)
 COPY pyproject.toml uv.lock ./
