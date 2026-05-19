@@ -16,8 +16,9 @@ RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir uv
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev
 
-# Copy application source
+# Copy application source and agent definitions
 COPY app/ ./app/
+COPY .agents/ .agents/
 
 # Copy migrations and ensure data directory exists
 COPY data/migrations/ /app/data/migrations/
