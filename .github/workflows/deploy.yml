@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
 
+# Only one deploy runs at a time. New pushes cancel any in-progress run
+# so we never have two Terraform processes competing for the state lock.
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
 # Default minimal permissions; each job overrides to the minimum it needs.
 permissions:
   contents: read
@@ -231,6 +237,12 @@ jobs:
           import_if_missing \
             module.storage.google_storage_bucket.sqlite_backup \
             "${TF_VAR_project_id}-sqlite-backup"
+          import_if_missing \
+            module.backend_service.google_cloud_run_v2_service.backend \
+            "projects/${TF_VAR_project_id}/locations/${TF_VAR_region}/services/${TF_VAR_app_name}-backend"
+          import_if_missing \
+            module.frontend_service.google_cloud_run_v2_service.frontend \
+            "projects/${TF_VAR_project_id}/locations/${TF_VAR_region}/services/${TF_VAR_app_name}-frontend"
         working-directory: infrastructure/terraform
 
       - name: Terraform Plan
@@ -238,7 +250,6 @@ jobs:
         working-directory: infrastructure/terraform
 
       - name: Terraform Apply
-        continue-on-error: true
         run: terraform apply tfplan
         working-directory: infrastructure/terraform
 
