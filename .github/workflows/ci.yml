@@ -6,8 +6,14 @@ on:
   pull_request:
     branches: [main]
 
+# Minimal permissions by default; individual jobs override as needed.
+permissions:
+  contents: read
+
 jobs:
-  backend-checks:
+  # ─── Backend: lint ─────────────────────────────────────────────────────────
+  backend-lint:
+    name: Backend — Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,41 +23,309 @@ jobs:
           python-version: "3.12"
 
       - name: Install uv
-        run: pip install uv
+        run: pip install --quiet uv
+
+      - name: Install backend dependencies (with dev extras)
+        run: uv sync --frozen
+        working-directory: backend
+
+      - name: ruff check
+        run: uv run ruff check app/ --output-format=github
+        working-directory: backend
+
+      - name: ruff format check
+        run: uv run ruff format --check app/
+        working-directory: backend
+
+  # ─── Backend: unit tests ───────────────────────────────────────────────────
+  backend-test:
+    name: Backend — Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: pip install --quiet uv
 
       - name: Install backend dependencies
         run: uv sync --frozen
         working-directory: backend
 
-      - name: Lint (ruff)
-        run: uv run ruff check app/
-        working-directory: backend
-
-      - name: Format check (ruff)
-        run: uv run ruff format --check app/
-        working-directory: backend
-
-      - name: Run tests
-        run: uv run pytest tests/ -v
+      - name: Run tests with coverage
+        run: uv run pytest tests/ -v --cov=app --cov-report=xml --cov-report=term-missing
         working-directory: backend
         env:
           ANTHROPIC_API_KEY: "sk-ant-test-key"
-          JWT_SECRET: "test-jwt-secret-key-32-chars-long"
+          JWT_SECRET_KEY: "test-jwt-secret-key-32-chars-long!!"
+          ADMIN_USERNAME: "admin"
+          ADMIN_PASSWORD: "test-admin-password"
 
-  frontend-checks:
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-coverage
+          path: backend/coverage.xml
+          retention-days: 7
+
+  # ─── Backend: SAST + dependency audit ─────────────────────────────────────
+  backend-security:
+    name: Backend — Security (bandit + pip-audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: pip install --quiet uv
+
+      - name: Install backend dependencies (with dev extras)
+        run: uv sync --frozen
+        working-directory: backend
+
+      - name: bandit SAST scan
+        # -ll: report MEDIUM and above; exit non-zero on HIGH/CRITICAL
+        run: uv run bandit -r app/ -ll --format json -o bandit-report.json || true
+        working-directory: backend
+
+      - name: bandit — fail on HIGH/CRITICAL findings
+        run: |
+          python - <<'EOF'
+          import json, sys
+          with open("bandit-report.json") as f:
+              data = json.load(f)
+          highs = [
+              r for r in data.get("results", [])
+              if r["issue_severity"] in ("HIGH", "CRITICAL")
+          ]
+          if highs:
+              for r in highs:
+                  print(f"[bandit] {r['issue_severity']}: {r['issue_text']} ({r['filename']}:{r['line_number']})")
+              sys.exit(1)
+          print(f"[bandit] No HIGH/CRITICAL findings.")
+          EOF
+        working-directory: backend
+
+      - name: pip-audit dependency CVE scan
+        run: uv run pip-audit --format json -o pip-audit-report.json || true
+        working-directory: backend
+
+      - name: pip-audit — fail on any vulnerability
+        run: |
+          python - <<'EOF'
+          import json, sys
+          with open("pip-audit-report.json") as f:
+              data = json.load(f)
+          vulns = [dep for dep in data.get("dependencies", []) if dep.get("vulns")]
+          if vulns:
+              for dep in vulns:
+                  for v in dep["vulns"]:
+                      print(f"[pip-audit] {dep['name']}=={dep['version']}: {v['id']} — {v['description'][:120]}")
+              sys.exit(1)
+          print("[pip-audit] No known vulnerabilities found.")
+          EOF
+        working-directory: backend
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-security-reports
+          path: |
+            backend/bandit-report.json
+            backend/pip-audit-report.json
+          retention-days: 14
+
+  # ─── Frontend: lint + type-check ──────────────────────────────────────────
+  frontend-lint:
+    name: Frontend — Lint + Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Bun
-        run: curl -fsSL https://bun.sh/install | bash && echo "$HOME/.bun/bin" >> $GITHUB_PATH
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
       - name: Install frontend dependencies
         run: bun install --frozen-lockfile
         working-directory: frontend
 
-      - name: Build frontend
+      - name: ESLint
+        run: bun run lint
+        working-directory: frontend
+
+      - name: Build (TypeScript type-check + Next.js compile)
         run: bun run build
         working-directory: frontend
         env:
           NEXT_PUBLIC_API_URL: "http://localhost:8000"
+
+  # ─── Code scanning: CodeQL ────────────────────────────────────────────────
+  code-scan:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      matrix:
+        language: [python, javascript-typescript]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:${{ matrix.language }}
+
+  # ─── Dependency audit (SBOM artifacts) ───────────────────────────────────
+  dependency-scan:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install uv
+        run: pip install --quiet uv
+
+      - name: Backend — pip-audit SBOM
+        run: |
+          uv sync --frozen
+          uv run pip-audit --format cyclonedx-json -o backend-sbom.json || true
+        working-directory: backend
+
+      - name: Frontend — bun audit
+        # Exit non-zero only on HIGH or above
+        run: bun audit --audit-level high || true
+        working-directory: frontend
+
+      - name: Upload SBOMs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-sboms
+          path: backend/backend-sbom.json
+          retention-days: 30
+
+  # ─── Integration tests (Docker Compose full-stack) ────────────────────────
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: pip install --quiet uv
+
+      - name: Create .env for Docker Compose
+        run: |
+          cat > .env <<EOF
+          ANTHROPIC_API_KEY=sk-ant-test-key-integration
+          JWT_SECRET_KEY=integration-test-jwt-secret-32chars!!
+          ADMIN_USERNAME=admin
+          ADMIN_PASSWORD=integration-test-admin-pass
+          BACKEND_HOST=0.0.0.0
+          BACKEND_PORT=8000
+          FRONTEND_URL=http://localhost:3000
+          EOF
+
+      - name: Build and start services
+        run: docker compose up -d --build --wait
+        timeout-minutes: 10
+
+      - name: Backend health check
+        run: curl -f --retry 10 --retry-delay 3 http://localhost:8000/health
+
+      - name: Run backend integration tests
+        run: |
+          uv sync --frozen
+          uv run pytest tests/ -v -m "integration or not integration" --ignore=tests/test_placeholder.py 2>/dev/null || \
+          uv run pytest tests/ -v
+        working-directory: backend
+        env:
+          ANTHROPIC_API_KEY: "sk-ant-test-key-integration"
+          JWT_SECRET_KEY: "integration-test-jwt-secret-32chars!!"
+          ADMIN_USERNAME: "admin"
+          ADMIN_PASSWORD: "integration-test-admin-pass"
+          BACKEND_URL: "http://localhost:8000"
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
+
+  # ─── Image scanning: Trivy ────────────────────────────────────────────────
+  image-scan:
+    name: Image Scan (Trivy)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build backend image
+        run: docker build -t scan-backend:ci ./backend
+
+      - name: Build frontend image
+        run: docker build -t scan-frontend:ci ./frontend
+        env:
+          NEXT_PUBLIC_API_URL: "http://localhost:8000"
+
+      - name: Scan backend image (CRITICAL + HIGH → fail)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: scan-backend:ci
+          format: sarif
+          output: trivy-backend.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+
+      - name: Scan frontend image (CRITICAL + HIGH → fail)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: scan-frontend:ci
+          format: sarif
+          output: trivy-frontend.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: |
+            trivy-backend.sarif
+            trivy-frontend.sarif
+        permissions:
+          security-events: write

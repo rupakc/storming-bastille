@@ -4,18 +4,25 @@ on:
   push:
     branches: [main]
 
+# Default minimal permissions; each job overrides to the minimum it needs.
+permissions:
+  contents: read
+
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   REGION: us-central1
   APP_NAME: storming-bastille
-  # Artifact Registry repository root (image tags are appended in each job)
   REGISTRY: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/storming-bastille
 
 jobs:
   # ─── Job 1: Bootstrap ──────────────────────────────────────────────────────
-  # Idempotent: enables APIs, creates TF state bucket, AR repo, and upserts secrets.
+  # Idempotent: enables APIs, creates TF state bucket, AR repo, upserts secrets.
   bootstrap:
+    name: Bootstrap GCP
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - id: auth
         uses: google-github-actions/auth@v2
@@ -86,10 +93,17 @@ jobs:
           upsert_secret "jwt-secret-key"    "${{ secrets.JWT_SECRET_KEY }}"
           upsert_secret "admin-password"    "${{ secrets.ADMIN_PASSWORD }}"
 
-  # ─── Job 2: Build & push Docker images ────────────────────────────────────
+  # ─── Job 2: Build, scan, and push Docker images ───────────────────────────
+  # Trivy scans both images for CRITICAL/HIGH CVEs before any push to registry.
+  # Images are only pushed if they pass the security gate.
   push-images:
+    name: Build + Scan + Push Images
     runs-on: ubuntu-latest
     needs: bootstrap
+    permissions:
+      contents: read
+      id-token: write
+      security-events: write
     outputs:
       backend_image: ${{ steps.set-outputs.outputs.backend_image }}
       frontend_image: ${{ steps.set-outputs.outputs.frontend_image }}
@@ -106,21 +120,59 @@ jobs:
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
 
-      - name: Build and push backend image
+      # Build both images first (before any push)
+      - name: Build backend image
         run: |
           docker build \
             --tag "${REGISTRY}/backend:${{ github.sha }}" \
             --tag "${REGISTRY}/backend:latest" \
             ./backend
-          docker push "${REGISTRY}/backend:${{ github.sha }}"
-          docker push "${REGISTRY}/backend:latest"
 
-      - name: Build and push frontend image
+      - name: Build frontend image
         run: |
           docker build \
             --tag "${REGISTRY}/frontend:${{ github.sha }}" \
             --tag "${REGISTRY}/frontend:latest" \
             ./frontend
+        env:
+          NEXT_PUBLIC_API_URL: "__NEXT_PUBLIC_API_URL__"
+
+      # ── Trivy security gate ──────────────────────────────────────────────
+      # Images are not pushed until both pass. CRITICAL or HIGH CVEs fail the job.
+      - name: Trivy scan — backend
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/backend:${{ github.sha }}
+          format: sarif
+          output: trivy-backend.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+
+      - name: Trivy scan — frontend
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/frontend:${{ github.sha }}
+          format: sarif
+          output: trivy-frontend.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: |
+            trivy-backend.sarif
+            trivy-frontend.sarif
+
+      # ── Push only after scan passes ──────────────────────────────────────
+      - name: Push backend image
+        run: |
+          docker push "${REGISTRY}/backend:${{ github.sha }}"
+          docker push "${REGISTRY}/backend:latest"
+
+      - name: Push frontend image
+        run: |
           docker push "${REGISTRY}/frontend:${{ github.sha }}"
           docker push "${REGISTRY}/frontend:latest"
 
@@ -132,15 +184,19 @@ jobs:
 
   # ─── Job 3: Terraform apply ────────────────────────────────────────────────
   terraform:
+    name: Terraform Apply
     runs-on: ubuntu-latest
     needs: push-images
+    permissions:
+      contents: read
+      id-token: write
     env:
-      TF_VAR_project_id:     ${{ secrets.GCP_PROJECT_ID }}
-      TF_VAR_region:         us-central1
-      TF_VAR_app_name:       storming-bastille
-      TF_VAR_alert_email:    ${{ secrets.ALERT_EMAIL }}
-      TF_VAR_backend_image:  ${{ needs.push-images.outputs.backend_image }}
-      TF_VAR_frontend_image: ${{ needs.push-images.outputs.frontend_image }}
+      TF_VAR_project_id:      ${{ secrets.GCP_PROJECT_ID }}
+      TF_VAR_region:          us-central1
+      TF_VAR_app_name:        storming-bastille
+      TF_VAR_alert_email:     ${{ secrets.ALERT_EMAIL }}
+      TF_VAR_backend_image:   ${{ needs.push-images.outputs.backend_image }}
+      TF_VAR_frontend_image:  ${{ needs.push-images.outputs.frontend_image }}
       TF_VAR_tf_state_bucket: ${{ secrets.GCP_PROJECT_ID }}-tf-state
     steps:
       - uses: actions/checkout@v4

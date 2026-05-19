@@ -73,10 +73,22 @@ Deployment takes approximately 5–10 minutes on a fresh project.
 
 ## CI Pipeline (all branches / PRs)
 
-Every push to any branch runs `.github/workflows/ci.yml`:
+Every push to any branch runs `.github/workflows/ci.yml`. All jobs must pass before a PR can merge.
 
-- `backend-checks`: `ruff check`, `ruff format --check`, `pytest`
-- `frontend-checks`: `bun install --frozen-lockfile`, `bun run build`
+| Job | What it checks |
+|-----|---------------|
+| `backend-lint` | `ruff check` + `ruff format --check` |
+| `backend-test` | `pytest` with coverage report (uploaded as artifact) |
+| `backend-security` | `bandit` SAST (fail on HIGH/CRITICAL) + `pip-audit` CVE scan |
+| `frontend-lint` | ESLint + `next build` (TypeScript type-check) |
+| `code-scan` | CodeQL analysis for Python and JavaScript/TypeScript (security-extended query suite) |
+| `dependency-scan` | `pip-audit` SBOM (CycloneDX) + `bun audit` for HIGH+ npm advisories |
+| `integration-test` | Full stack via Docker Compose + backend health check + pytest |
+| `image-scan` | Trivy scan of both Docker images — CRITICAL/HIGH CVEs fail the job |
+
+### Security artifacts
+
+Coverage reports, bandit JSON, pip-audit JSON, and SBOMs are uploaded as GitHub Actions artifacts (retained 7–30 days). Trivy SARIF results are pushed to the GitHub Security tab (requires Advanced Security enabled on the repo).
 
 ## Local Docker Testing
 
@@ -146,11 +158,33 @@ To keep one backend instance warm (eliminates cold start for SSE streaming), set
 
 ### SQLite Database Persistence
 
-Cloud Run containers are ephemeral. The backend Dockerfile ships a `docker-entrypoint.sh` that:
-- **On startup**: downloads `bastille.db` from GCS if a backup exists
-- **On SIGTERM**: uploads `bastille.db` back to GCS before the container exits
+Cloud Run containers are ephemeral. The backend ships `gcs_backup.py` (Python + `google-cloud-storage`) and `docker-entrypoint.sh` that together provide three layers of durability:
 
-This provides durability with eventual consistency (last writer wins on concurrent scale-out, which is acceptable given `max_instances = 5` and SQLite's write serialization).
+| Layer | When | What |
+|-------|------|------|
+| **Cold-start restore** | Container startup | Downloads both `bastille.db` and `users.db` from GCS |
+| **Periodic sync** | Every 5 minutes (configurable via `BACKUP_INTERVAL_SECONDS`) | WAL checkpoint + uploads both DBs |
+| **Graceful shutdown** | SIGTERM (redeploy / scale-to-zero) | Final WAL checkpoint + uploads both DBs |
+
+**WAL checkpoint**: Before each upload, `PRAGMA wal_checkpoint(TRUNCATE)` flushes the `-wal` sidecar into the main DB file, ensuring a consistent snapshot.
+
+**Worst-case data loss**:
+- Normal redeploy or scale-to-zero → zero (SIGTERM triggers final sync)
+- OOM kill or crash → up to 5 minutes of writes
+
+**GCS versioning**: The backup bucket retains the 10 most recent versions of each file. To restore a previous version:
+
+```bash
+# List generations
+gsutil ls -la gs://storming-bastille-prod-storming-bastille-data/bastille.db
+
+# Restore a specific generation
+gsutil cp "gs://storming-bastille-prod-storming-bastille-data/bastille.db#<generation>" ./bastille.db
+```
+
+**Concurrent instances**: With `max_instance_count = 5`, multiple backend instances write to GCS independently (last writer wins). For strict consistency, set `max_instance_count = 1` in `modules/backend_service/main.tf`. For a personal app with user-scoped sessions, this is acceptable.
+
+**Local development**: `BACKUP_BUCKET` is not set locally, so all backup logic is skipped silently. Data persists in the `backend_data` Docker volume between `docker compose up/down` cycles.
 
 ### SSE Streaming
 

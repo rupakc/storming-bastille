@@ -20,9 +20,10 @@ COPY app/ ./app/
 # Ensure data directory exists
 RUN mkdir -p /app/data
 
-# ─── GCS backup / restore script ─────────────────────────────────────────────
-# On startup: restore SQLite DB from GCS if a backup exists.
-# On SIGTERM: flush DB to GCS before the container exits.
+# ─── GCS backup / restore ────────────────────────────────────────────────────
+# gcs_backup.py: Python-based backup using google-cloud-storage (ADC on Cloud Run)
+# docker-entrypoint.sh: restore on cold start, periodic 5-min sync, SIGTERM flush
+COPY gcs_backup.py /app/gcs_backup.py
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
