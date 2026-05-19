@@ -7,7 +7,7 @@ resource "google_storage_bucket" "sqlite_backup" {
   name                        = "${var.project_id}-sqlite-backup"
   location                    = var.region
   uniform_bucket_level_access = true
-  force_destroy               = true
+  force_destroy               = false
 
   versioning {
     enabled = true
@@ -17,6 +17,12 @@ resource "google_storage_bucket" "sqlite_backup" {
   lifecycle_rule {
     condition { num_newer_versions = 10 }
     action    { type = "Delete" }
+  }
+
+  # Bucket location cannot be changed after creation. Ignore drift so Terraform
+  # accepts an existing bucket regardless of which region it was originally created in.
+  lifecycle {
+    ignore_changes = [location]
   }
 }
 
