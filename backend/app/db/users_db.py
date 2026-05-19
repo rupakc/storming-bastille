@@ -148,9 +148,7 @@ def create_user(
 
 def get_user_by_username(username: str) -> dict | None:
     with get_connection() as conn:
-        row = conn.execute(
-            "SELECT * FROM users WHERE username = ?", (username,)
-        ).fetchone()
+        row = conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
     return _row_to_dict(row) if row else None
 
 

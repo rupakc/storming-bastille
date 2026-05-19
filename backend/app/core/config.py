@@ -26,9 +26,7 @@ class Settings(BaseSettings):
         if not self.jwt_secret_key and self.jwt_secret:
             object.__setattr__(self, "jwt_secret_key", self.jwt_secret)
         elif not self.jwt_secret_key:
-            object.__setattr__(
-                self, "jwt_secret_key", "storming-bastille-secret-key-2026"
-            )
+            object.__setattr__(self, "jwt_secret_key", "storming-bastille-secret-key-2026")
 
 
 @lru_cache

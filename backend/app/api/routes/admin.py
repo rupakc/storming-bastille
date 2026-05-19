@@ -66,9 +66,7 @@ async def admin_create_user(
             is_first_login=True,
         )
     except sqlite3.IntegrityError as exc:
-        raise HTTPException(
-            status_code=409, detail=f"User could not be created: {exc}"
-        ) from exc
+        raise HTTPException(status_code=409, detail=f"User could not be created: {exc}") from exc
     return _safe(user)
 
 
@@ -83,9 +81,7 @@ async def admin_deactivate_user(
     admin: dict = Depends(require_admin),
 ):
     if username == admin["username"]:
-        raise HTTPException(
-            status_code=400, detail="Cannot deactivate your own account"
-        )
+        raise HTTPException(status_code=400, detail="Cannot deactivate your own account")
     if not get_user_by_username(username):
         raise HTTPException(status_code=404, detail="User not found")
     deactivate_user(username)
@@ -112,9 +108,7 @@ async def admin_reset_password_endpoint(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if not user["is_active"]:
-        raise HTTPException(
-            status_code=400, detail="Cannot reset password for an inactive user"
-        )
+        raise HTTPException(status_code=400, detail="Cannot reset password for an inactive user")
     if len(req.new_password) < MIN_PASSWORD_LENGTH:
         raise HTTPException(
             status_code=400,

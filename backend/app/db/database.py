@@ -68,9 +68,11 @@ class AsyncSQLiteDatabase:
 
         migration_files = sorted(migrations_dir.glob("*.sql"))
         for mf in migration_files:
-            row = await (await self.conn.execute(
-                "SELECT 1 FROM schema_migrations WHERE filename = ?", (mf.name,)
-            )).fetchone()
+            row = await (
+                await self.conn.execute(
+                    "SELECT 1 FROM schema_migrations WHERE filename = ?", (mf.name,)
+                )
+            ).fetchone()
             if row:
                 continue  # already applied
             logger.info("Running migration: %s", mf.name)

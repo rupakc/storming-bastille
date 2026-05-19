@@ -25,7 +25,9 @@ class GraphNode(BaseModel):
 
 class EdgeData(BaseModel):
     label: str
-    type: str  # direct_cause / contributing_factor / enabling_condition / consequence / feedback_loop
+    type: (
+        str  # direct_cause / contributing_factor / enabling_condition / consequence / feedback_loop
+    )
     confidence: float
     explanation: str
 

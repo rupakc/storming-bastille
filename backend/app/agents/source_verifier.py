@@ -46,9 +46,7 @@ class SourceVerifierAgent(BaseAgent):
     def __init__(self):
         super().__init__(system_prompt=SOURCE_VERIFIER_SYSTEM_PROMPT)
 
-    async def verify(
-        self, events: list[dict], search_results: list[SearchResult]
-    ) -> list[dict]:
+    async def verify(self, events: list[dict], search_results: list[SearchResult]) -> list[dict]:
         events_text = json.dumps(events, indent=2)
         sources_text = "\n".join(
             f"- [{r.title}]({r.url}): {r.snippet}" for r in search_results[:15]

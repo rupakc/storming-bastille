@@ -38,7 +38,7 @@ async def execute_query(
     return EventSourceResponse(
         event_generator(),
         headers={
-            "X-Accel-Buffering": "no",       # Disable nginx/proxy buffering
+            "X-Accel-Buffering": "no",  # Disable nginx/proxy buffering
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
         },

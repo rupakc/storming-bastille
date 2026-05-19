@@ -48,7 +48,9 @@ Aim for at least one relationship per event, but do not force connections that d
 
 class CausalAnalystAgent(BaseAgent):
     def __init__(self):
-        super().__init__(system_prompt=CAUSAL_ANALYST_SYSTEM_PROMPT, model="claude-haiku-4-5-20251001")
+        super().__init__(
+            system_prompt=CAUSAL_ANALYST_SYSTEM_PROMPT, model="claude-haiku-4-5-20251001"
+        )
 
     async def analyze(self, query: str, events: list[dict]) -> list[dict]:
         events_summary = json.dumps(events, indent=2)
@@ -93,8 +95,11 @@ class CausalAnalystAgent(BaseAgent):
             relationships = parsed.get("relationships", [])
 
             valid_types = {
-                "direct_cause", "contributing_factor", "enabling_condition",
-                "consequence", "feedback_loop",
+                "direct_cause",
+                "contributing_factor",
+                "enabling_condition",
+                "consequence",
+                "feedback_loop",
             }
             for rel in relationships:
                 if rel.get("type") not in valid_types:

@@ -44,7 +44,10 @@ class QueryOrchestrator:
                 yield item
             return
 
-        yield {"event": "status", "data": {"phase": "researching", "message": "Researching historical events..."}}
+        yield {
+            "event": "status",
+            "data": {"phase": "researching", "message": "Researching historical events..."},
+        }
 
         # Check for cached results (exact query match)
         cached = await self.repo.find_cached_query(request.query)
@@ -53,18 +56,28 @@ class QueryOrchestrator:
             narrative = cached["narrative"]
             chunk_size = 200
             for i in range(0, len(narrative), chunk_size):
-                yield {"event": "narrative", "data": {"chunk": narrative[i:i + chunk_size]}}
+                yield {"event": "narrative", "data": {"chunk": narrative[i : i + chunk_size]}}
 
-            yield {"event": "status", "data": {"phase": "analyzing", "message": "Loading cached analysis..."}}
+            yield {
+                "event": "status",
+                "data": {"phase": "analyzing", "message": "Loading cached analysis..."},
+            }
             yield {"event": "graph", "data": {"nodes": cached["nodes"], "edges": cached["edges"]}}
             yield {"event": "timeline", "data": {"events": cached["timeline"]}}
             yield {"event": "sources", "data": {"citations": cached["sources"][:20]}}
 
-            asyncio.create_task(self._persist_results(
-                query_record.id, narrative, cached["sources"], {
-                    "nodes": cached["nodes"], "edges": cached["edges"], "timeline": cached["timeline"]
-                }
-            ))
+            asyncio.create_task(
+                self._persist_results(
+                    query_record.id,
+                    narrative,
+                    cached["sources"],
+                    {
+                        "nodes": cached["nodes"],
+                        "edges": cached["edges"],
+                        "timeline": cached["timeline"],
+                    },
+                )
+            )
 
             yield {"event": "done", "data": {"session_id": session.id, "query_id": query_record.id}}
             return
@@ -88,7 +101,9 @@ class QueryOrchestrator:
         sources: list[dict] = []
 
         try:
-            async for item in self.historian.stream_research(request.query, search_context=search_context):
+            async for item in self.historian.stream_research(
+                request.query, search_context=search_context
+            ):
                 if item["type"] == "narrative":
                     yield {"event": "narrative", "data": {"chunk": item["chunk"]}}
                 elif item["type"] == "events":
@@ -101,16 +116,32 @@ class QueryOrchestrator:
             return
 
         if not events:
-            yield {"event": "error", "data": {"message": "Could not identify historical events for this query. Please try rephrasing."}}
+            yield {
+                "event": "error",
+                "data": {
+                    "message": "Could not identify historical events for this query. Please try rephrasing."
+                },
+            }
             return
 
         # Phase 2: IMMEDIATELY send graph nodes + timeline (no edges yet)
         # This ensures the user sees the diagram and timeline within seconds of narrative
-        graph_data_no_edges = self.graph_builder._build_fallback_graph(events, [], query=request.query)
+        graph_data_no_edges = self.graph_builder._build_fallback_graph(
+            events, [], query=request.query
+        )
 
-        yield {"event": "graph", "data": {"nodes": graph_data_no_edges.get("nodes", []), "edges": []}}
+        yield {
+            "event": "graph",
+            "data": {"nodes": graph_data_no_edges.get("nodes", []), "edges": []},
+        }
         yield {"event": "timeline", "data": {"events": graph_data_no_edges.get("timeline", [])}}
-        yield {"event": "status", "data": {"phase": "analyzing", "message": f"Found {len(events)} events, analyzing causal links..."}}
+        yield {
+            "event": "status",
+            "data": {
+                "phase": "analyzing",
+                "message": f"Found {len(events)} events, analyzing causal links...",
+            },
+        }
 
         # Phase 3: Run causal analysis (background) then send edge update
         relationships: list[dict] = []
@@ -126,15 +157,23 @@ class QueryOrchestrator:
 
         # Send updated graph WITH edges (nodes stay the same, edges added)
         if relationships:
-            graph_data = self.graph_builder._build_fallback_graph(events, relationships, query=request.query)
-            yield {"event": "graph", "data": {"nodes": graph_data.get("nodes", []), "edges": graph_data.get("edges", [])}}
+            graph_data = self.graph_builder._build_fallback_graph(
+                events, relationships, query=request.query
+            )
+            yield {
+                "event": "graph",
+                "data": {
+                    "nodes": graph_data.get("nodes", []),
+                    "edges": graph_data.get("edges", []),
+                },
+            }
         else:
             graph_data = graph_data_no_edges
 
         # Persist to database (non-blocking)
-        asyncio.create_task(self._persist_results(
-            query_record.id, narrative_text, sources, graph_data
-        ))
+        asyncio.create_task(
+            self._persist_results(query_record.id, narrative_text, sources, graph_data)
+        )
 
         yield {"event": "done", "data": {"session_id": session.id, "query_id": query_record.id}}
 
@@ -206,9 +245,11 @@ class QueryOrchestrator:
             return
 
         # Persist the follow-up answer (no graph data)
-        asyncio.create_task(self._persist_results(
-            query_id, narrative_text, [], {"nodes": [], "edges": [], "timeline": []}
-        ))
+        asyncio.create_task(
+            self._persist_results(
+                query_id, narrative_text, [], {"nodes": [], "edges": [], "timeline": []}
+            )
+        )
 
         yield {"event": "done", "data": {"session_id": session_id, "query_id": query_id}}
 
@@ -242,12 +283,14 @@ class QueryOrchestrator:
                     snippet = line[9:].strip()
             if title and url:
                 score = max(0.5, 1.0 - idx * 0.06)
-                sources.append({
-                    "title": title,
-                    "url": url,
-                    "snippet": snippet,
-                    "relevance_score": round(score, 2),
-                })
+                sources.append(
+                    {
+                        "title": title,
+                        "url": url,
+                        "snippet": snippet,
+                        "relevance_score": round(score, 2),
+                    }
+                )
         return sources
 
     async def _persist_results(

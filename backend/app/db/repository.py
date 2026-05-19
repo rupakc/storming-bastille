@@ -29,18 +29,14 @@ class SessionRepository:
         )
         return Session(id=session_id, title=title, created_at=now, updated_at=now, queries=[])
 
-    async def get_session(
-        self, session_id: str, user_id: str | None = None
-    ) -> Session | None:
+    async def get_session(self, session_id: str, user_id: str | None = None) -> Session | None:
         if user_id is not None:
             row = await self.db.fetchone(
                 "SELECT * FROM sessions WHERE id = ? AND user_id = ?",
                 (session_id, user_id),
             )
         else:
-            row = await self.db.fetchone(
-                "SELECT * FROM sessions WHERE id = ?", (session_id,)
-            )
+            row = await self.db.fetchone("SELECT * FROM sessions WHERE id = ?", (session_id,))
         if row is None:
             return None
 
@@ -103,7 +99,10 @@ class SessionRepository:
             )
         return [
             SessionSummary(
-                id=r["id"], title=r["title"], created_at=r["created_at"], query_count=r["query_count"]
+                id=r["id"],
+                title=r["title"],
+                created_at=r["created_at"],
+                query_count=r["query_count"],
             )
             for r in rows
         ]
@@ -119,9 +118,7 @@ class SessionRepository:
             "VALUES (?, ?, ?, '', '[]', ?, ?)",
             (query_id, session_id, query_text, now, sequence),
         )
-        await self.db.execute(
-            "UPDATE sessions SET updated_at = ? WHERE id = ?", (now, session_id)
-        )
+        await self.db.execute("UPDATE sessions SET updated_at = ? WHERE id = ?", (now, session_id))
         return QueryRecord(
             id=query_id,
             query_text=query_text,
@@ -147,9 +144,7 @@ class SessionRepository:
                 graph_data.get("timeline", []),
             )
 
-    async def update_graph(
-        self, query_id: str, nodes: list, edges: list, timeline: list
-    ) -> None:
+    async def update_graph(self, query_id: str, nodes: list, edges: list, timeline: list) -> None:
         now = _now()
         existing = await self.db.fetchone("SELECT id FROM graphs WHERE query_id = ?", (query_id,))
         if existing:
@@ -161,7 +156,14 @@ class SessionRepository:
             graph_id = _uuid()
             await self.db.execute(
                 "INSERT INTO graphs (id, query_id, nodes, edges, timeline, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
-                (graph_id, query_id, json.dumps(nodes), json.dumps(edges), json.dumps(timeline), now),
+                (
+                    graph_id,
+                    query_id,
+                    json.dumps(nodes),
+                    json.dumps(edges),
+                    json.dumps(timeline),
+                    now,
+                ),
             )
 
     async def find_cached_query(self, query_text: str) -> dict | None:

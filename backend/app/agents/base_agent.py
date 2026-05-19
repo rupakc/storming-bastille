@@ -8,7 +8,9 @@ logger = logging.getLogger(__name__)
 
 
 class BaseAgent:
-    def __init__(self, system_prompt: str, model: str = "claude-sonnet-4-20250514", max_tokens: int = 8192):
+    def __init__(
+        self, system_prompt: str, model: str = "claude-sonnet-4-20250514", max_tokens: int = 8192
+    ):
         self.system_prompt = system_prompt
         self.model = model
         self.max_tokens = max_tokens
@@ -55,7 +57,9 @@ class BaseAgent:
                             {
                                 "type": "tool_result",
                                 "tool_use_id": block.id,
-                                "content": json.dumps(tool_result) if not isinstance(tool_result, str) else tool_result,
+                                "content": json.dumps(tool_result)
+                                if not isinstance(tool_result, str)
+                                else tool_result,
                             }
                         )
 
@@ -97,7 +101,11 @@ class BaseAgent:
                         if hasattr(event.content_block, "type"):
                             if event.content_block.type == "tool_use":
                                 current_tool_uses.append(
-                                    {"id": event.content_block.id, "name": event.content_block.name, "input_json": ""}
+                                    {
+                                        "id": event.content_block.id,
+                                        "name": event.content_block.name,
+                                        "input_json": "",
+                                    }
                                 )
                     elif event.type == "content_block_delta":
                         if hasattr(event.delta, "text"):
@@ -121,7 +129,9 @@ class BaseAgent:
                             {
                                 "type": "tool_result",
                                 "tool_use_id": block.id,
-                                "content": json.dumps(tool_result) if not isinstance(tool_result, str) else tool_result,
+                                "content": json.dumps(tool_result)
+                                if not isinstance(tool_result, str)
+                                else tool_result,
                             }
                         )
 

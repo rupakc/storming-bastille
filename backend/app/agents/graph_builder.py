@@ -138,7 +138,9 @@ class GraphBuilderAgent(BaseAgent):
             return default
 
     def _build_fallback_graph(
-        self, events: list[dict], relationships: list[dict],
+        self,
+        events: list[dict],
+        relationships: list[dict],
         query: str = "",
     ) -> dict:
         category_y_offsets = {

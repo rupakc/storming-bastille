@@ -74,7 +74,11 @@ class HistorianAgent(BaseAgent):
     def __init__(self):
         # Use Haiku for fast first-token latency (~1-2s vs ~5-10s for Sonnet)
         # Cap at 4000 tokens to keep narrative concise and streaming fast
-        super().__init__(system_prompt=HISTORIAN_SYSTEM_PROMPT, model="claude-haiku-4-5-20251001", max_tokens=6000)
+        super().__init__(
+            system_prompt=HISTORIAN_SYSTEM_PROMPT,
+            model="claude-haiku-4-5-20251001",
+            max_tokens=6000,
+        )
         self._search_results: list[SearchResult] = []
 
     async def research(self, query: str) -> tuple[list[dict], list[dict]]:
@@ -82,8 +86,7 @@ class HistorianAgent(BaseAgent):
         response = await self.run(query)
         events = self._parse_events(response)
         sources = [
-            {"title": r.title, "url": r.url, "snippet": r.snippet}
-            for r in self._search_results
+            {"title": r.title, "url": r.url, "snippet": r.snippet} for r in self._search_results
         ]
         return events, sources
 

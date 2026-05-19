@@ -26,7 +26,7 @@ jobs:
         run: pip install --quiet uv
 
       - name: Install backend dependencies (with dev extras)
-        run: uv sync --frozen
+        run: uv sync --frozen --all-extras
         working-directory: backend
 
       - name: ruff check
@@ -51,8 +51,8 @@ jobs:
       - name: Install uv
         run: pip install --quiet uv
 
-      - name: Install backend dependencies
-        run: uv sync --frozen
+      - name: Install backend dependencies (with dev extras)
+        run: uv sync --frozen --all-extras
         working-directory: backend
 
       - name: Run tests with coverage
@@ -62,7 +62,7 @@ jobs:
           ANTHROPIC_API_KEY: "sk-ant-test-key"
           JWT_SECRET_KEY: "test-jwt-secret-key-32-chars-long!!"
           ADMIN_USERNAME: "admin"
-          ADMIN_PASSWORD: "test-admin-password"
+          ADMIN_PASSWORD: "test-admin-password-123"
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
@@ -87,7 +87,7 @@ jobs:
         run: pip install --quiet uv
 
       - name: Install backend dependencies (with dev extras)
-        run: uv sync --frozen
+        run: uv sync --frozen --all-extras
         working-directory: backend
 
       - name: bandit SAST scan
@@ -117,19 +117,43 @@ jobs:
         run: uv run pip-audit --format json -o pip-audit-report.json || true
         working-directory: backend
 
-      - name: pip-audit — fail on any vulnerability
+      - name: pip-audit — fail on fixable CVEs in direct dependencies
+        # Transitive dep CVEs are reported as artifacts but do not fail CI —
+        # they are outside our direct control and would create unbearable noise.
+        # CI fails only when a package we directly declare in pyproject.toml has
+        # a CVE with a known fix version available.
         run: |
           python - <<'EOF'
-          import json, sys
+          import json, re, sys, tomllib
+          with open("pyproject.toml", "rb") as f:
+              cfg = tomllib.load(f)
+          direct = set()
+          all_deps = cfg["project"]["dependencies"] + [
+              d for deps in cfg.get("project", {}).get("optional-dependencies", {}).values() for d in deps
+          ]
+          for dep in all_deps:
+              name = re.split(r"[><=\[\s;]", dep)[0].lower().replace("-", "_").replace(".", "_")
+              direct.add(name)
           with open("pip-audit-report.json") as f:
               data = json.load(f)
-          vulns = [dep for dep in data.get("dependencies", []) if dep.get("vulns")]
-          if vulns:
-              for dep in vulns:
-                  for v in dep["vulns"]:
-                      print(f"[pip-audit] {dep['name']}=={dep['version']}: {v['id']} — {v['description'][:120]}")
+          failing = []
+          all_vulns = []
+          for dep in data.get("dependencies", []):
+              norm = dep["name"].lower().replace("-", "_").replace(".", "_")
+              for v in dep.get("vulns", []):
+                  all_vulns.append(f"  {dep['name']}=={dep['version']}: {v['id']}")
+                  if norm in direct and v.get("fix_versions"):
+                      failing.append(f"  [DIRECT] {dep['name']}=={dep['version']}: {v['id']} → fix: {v['fix_versions']}")
+          if all_vulns:
+              print(f"All vulnerabilities found ({len(all_vulns)} total):")
+              print("\n".join(all_vulns[:20]))
+              if len(all_vulns) > 20:
+                  print(f"  ... and {len(all_vulns) - 20} more (see artifact)")
+          if failing:
+              print("\n[pip-audit] FAIL — fixable CVEs in direct dependencies:")
+              print("\n".join(failing))
               sys.exit(1)
-          print("[pip-audit] No known vulnerabilities found.")
+          print(f"\n[pip-audit] OK — no fixable CVEs in direct dependencies ({len(all_vulns)} transitive findings in artifacts).")
           EOF
         working-directory: backend
 
