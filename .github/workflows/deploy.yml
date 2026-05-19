@@ -243,6 +243,9 @@ jobs:
           import_if_missing \
             module.frontend_service.google_cloud_run_v2_service.frontend \
             "projects/${TF_VAR_project_id}/locations/${TF_VAR_region}/services/${TF_VAR_app_name}-frontend"
+          import_if_missing \
+            module.monitoring.google_logging_metric.query_request_count \
+            "storming_bastille_query_request_count"
         working-directory: infrastructure/terraform
 
       - name: Terraform Plan
