@@ -13,22 +13,22 @@ RUN apt-get update \
 RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir uv
 
 # Install Python dependencies first (layer cache)
-COPY pyproject.toml uv.lock ./
+COPY backend/pyproject.toml backend/uv.lock ./
 RUN uv sync --frozen --no-dev
 
 # Copy application source and agent definitions
-COPY app/ ./app/
+COPY backend/app/ ./app/
 COPY .agents/ .agents/
 
 # Copy migrations and ensure data directory exists
-COPY data/migrations/ /app/data/migrations/
+COPY backend/data/migrations/ /app/data/migrations/
 RUN mkdir -p /app/data
 
 # ─── GCS backup / restore ────────────────────────────────────────────────────
 # gcs_backup.py: Python-based backup using google-cloud-storage (ADC on Cloud Run)
 # docker-entrypoint.sh: restore on cold start, periodic 5-min sync, SIGTERM flush
-COPY gcs_backup.py /app/gcs_backup.py
-COPY docker-entrypoint.sh /docker-entrypoint.sh
+COPY backend/gcs_backup.py /app/gcs_backup.py
+COPY backend/docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
 EXPOSE 8000

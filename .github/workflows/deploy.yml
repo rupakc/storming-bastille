@@ -127,9 +127,10 @@ jobs:
       - name: Build backend image
         run: |
           docker build \
+            --file backend/Dockerfile \
             --tag "${REGISTRY}/backend:${{ github.sha }}" \
             --tag "${REGISTRY}/backend:latest" \
-            ./backend
+            .
 
       - name: Build frontend image
         run: |
