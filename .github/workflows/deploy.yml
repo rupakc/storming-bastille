@@ -217,6 +217,9 @@ jobs:
           import_if_missing \
             'module.secrets.google_secret_manager_secret.secrets["admin-password"]' \
             "projects/${TF_VAR_project_id}/secrets/admin-password"
+          import_if_missing \
+            module.storage.google_storage_bucket.sqlite_backup \
+            "${TF_VAR_project_id}-sqlite-backup"
         working-directory: infrastructure/terraform
 
       - name: Terraform Plan
