@@ -13,13 +13,13 @@ BACKUP_INTERVAL="${BACKUP_INTERVAL_SECONDS:-300}"
 mkdir -p "$DATA_DIR"
 
 # ─── Restore both DBs from GCS on cold start ─────────────────────────────────
-python /app/gcs_backup.py restore
+/app/.venv/bin/python /app/gcs_backup.py restore
 
 # ─── Periodic background sync ────────────────────────────────────────────────
 _periodic_backup() {
   while true; do
     sleep "$BACKUP_INTERVAL"
-    python /app/gcs_backup.py save
+    /app/.venv/bin/python /app/gcs_backup.py save
   done
 }
 
@@ -32,7 +32,7 @@ BACKUP_PID=$!
 _shutdown() {
   echo "[entrypoint] Shutdown signal received — running final backup"
   kill "$BACKUP_PID" 2>/dev/null || true
-  python /app/gcs_backup.py save
+  /app/.venv/bin/python /app/gcs_backup.py save
   echo "[entrypoint] Backup complete — shutting down app"
   kill "$APP_PID" 2>/dev/null || true
   wait "$APP_PID" 2>/dev/null || true
