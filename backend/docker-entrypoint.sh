@@ -13,7 +13,9 @@ BACKUP_INTERVAL="${BACKUP_INTERVAL_SECONDS:-300}"
 mkdir -p "$DATA_DIR"
 
 # ─── Restore both DBs from GCS on cold start ─────────────────────────────────
-/app/.venv/bin/python /app/gcs_backup.py restore
+# Non-fatal: if ADC isn't ready or bucket is empty, app starts fresh.
+/app/.venv/bin/python /app/gcs_backup.py restore || \
+  echo "[entrypoint] GCS restore failed (non-fatal) — starting fresh"
 
 # ─── Periodic background sync ────────────────────────────────────────────────
 _periodic_backup() {
