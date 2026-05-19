@@ -253,11 +253,11 @@ jobs:
         working-directory: infrastructure/terraform
 
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
+        run: terraform plan -out=tfplan -lock-timeout=300s
         working-directory: infrastructure/terraform
 
       - name: Terraform Apply
-        run: terraform apply tfplan
+        run: terraform apply -lock-timeout=300s tfplan
         working-directory: infrastructure/terraform
 
       - name: Show deployment URLs
