@@ -1,0 +1,29 @@
+# Trivy vulnerability exceptions
+# Format: CVE-ID [YYYY-MM-DD] # reason
+#
+# These CVEs are in packages COMPILED INTO next.js's own dist/compiled/ directory.
+# They cannot be fixed by updating our package.json — the bundled code is baked into
+# the next.js distribution tarball itself. Suppressions expire quarterly so we revisit
+# them and upgrade next.js when a patched release is available.
+
+# cross-spawn@7.0.3 inside next/dist/compiled/cross-spawn/
+# Requires >=7.0.5; next@15.5.18 bundles 7.0.3 internally
+CVE-2024-21538 2026-09-01 # cross-spawn in next.js dist/compiled — upgrade next.js to fix
+
+# glob@7.1.7 inside next/dist/compiled/glob/
+# Fix requires glob v10.5.0 or v11.1.0 (major version bump); next bundles 7.1.7
+CVE-2025-64756 2026-09-01 # glob in next.js dist/compiled — upgrade next.js to fix
+
+# minimatch — transitive via next.js toolchain
+CVE-2026-26996 2026-09-01 # minimatch in next.js toolchain — upgrade next.js to fix
+CVE-2026-27903 2026-09-01 # minimatch in next.js toolchain — upgrade next.js to fix
+CVE-2026-27904 2026-09-01 # minimatch in next.js toolchain — upgrade next.js to fix
+
+# tar@6.1.15 inside next/dist/compiled/tar/
+# Fix requires tar v7.5.3+ (major version bump); next@15.5.18 bundles 6.1.15 internally
+CVE-2026-23745 2026-09-01 # tar in next.js dist/compiled — upgrade next.js to fix
+CVE-2026-23950 2026-09-01 # tar in next.js dist/compiled — upgrade next.js to fix
+CVE-2026-24842 2026-09-01 # tar in next.js dist/compiled — upgrade next.js to fix
+CVE-2026-26960 2026-09-01 # tar in next.js dist/compiled — upgrade next.js to fix
+CVE-2026-29786 2026-09-01 # tar in next.js dist/compiled — upgrade next.js to fix
+CVE-2026-31802 2026-09-01 # tar in next.js dist/compiled — upgrade next.js to fix

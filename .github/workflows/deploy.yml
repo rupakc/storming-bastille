@@ -151,6 +151,7 @@ jobs:
           output: trivy-backend.sarif
           severity: CRITICAL,HIGH
           ignore-unfixed: true
+          trivyignores: .trivyignore
           exit-code: "1"
 
       - name: Trivy scan — frontend
@@ -163,6 +164,7 @@ jobs:
           output: trivy-frontend.sarif
           severity: CRITICAL,HIGH
           ignore-unfixed: true
+          trivyignores: .trivyignore
           exit-code: "1"
 
       - name: Upload backend Trivy results to GitHub Security tab
