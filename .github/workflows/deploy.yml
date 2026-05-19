@@ -246,6 +246,9 @@ jobs:
           import_if_missing \
             module.monitoring.google_logging_metric.query_request_count \
             "storming_bastille_query_request_count"
+          import_if_missing \
+            module.iam.google_service_account.deployer \
+            "projects/${TF_VAR_project_id}/serviceAccounts/${TF_VAR_app_name}-deployer@${TF_VAR_project_id}.iam.gserviceaccount.com"
         working-directory: infrastructure/terraform
 
       - name: Terraform Plan
