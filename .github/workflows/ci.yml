@@ -293,7 +293,7 @@ jobs:
 
       - name: Run backend integration tests
         run: |
-          uv sync --frozen
+          uv sync --frozen --all-extras
           uv run pytest tests/ -v -m "integration or not integration" --ignore=tests/test_placeholder.py 2>/dev/null || \
           uv run pytest tests/ -v
         working-directory: backend
