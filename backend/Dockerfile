@@ -19,7 +19,8 @@ RUN uv sync --frozen --no-dev
 # Copy application source
 COPY app/ ./app/
 
-# Ensure data directory exists
+# Copy migrations and ensure data directory exists
+COPY data/migrations/ /app/data/migrations/
 RUN mkdir -p /app/data
 
 # ─── GCS backup / restore ────────────────────────────────────────────────────
