@@ -141,9 +141,7 @@ class QueryOrchestrator:
                                 "message": f"Found {len(events)} events, analyzing causal links...",
                             },
                         }
-                        causal_task = asyncio.create_task(
-                            self._run_analysis(request.query, events)
-                        )
+                        causal_task = asyncio.create_task(self._run_analysis(request.query, events))
 
         except Exception as exc:
             logger.error("Narrative streaming failed: %s", exc)
@@ -177,9 +175,7 @@ class QueryOrchestrator:
                         "message": f"Found {len(events)} events, analyzing causal links...",
                     },
                 }
-                causal_task = asyncio.create_task(
-                    self._run_analysis(request.query, events)
-                )
+                causal_task = asyncio.create_task(self._run_analysis(request.query, events))
 
         if not events:
             yield {
