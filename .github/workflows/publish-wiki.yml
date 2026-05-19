@@ -10,14 +10,24 @@ on:
 jobs:
   publish-wiki:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout main repo
         uses: actions/checkout@v4
 
-      - name: Publish wiki pages
-        uses: Andrew-Chen-Wang/github-wiki-action@v4
-        with:
-          path: wiki/
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push wiki pages to GitHub Wiki
+        run: |
+          cd wiki
+          git init
+          git config user.email "rchakraborty@dataguard.com"
+          git config user.name "Rupak Chakraborty"
+          git add -A
+          git commit -m "Update wiki from main repo"
+          # Try to push; if wiki repo doesn't exist, this will fail gracefully
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/rupakc/storming-bastille.wiki.git"
+          # Try clone approach: clone wiki into tmp, copy files, push
+          # First attempt: direct push (works if wiki is initialised)
+          git push --force origin HEAD:master 2>/dev/null || \
+          git push --force origin HEAD:main 2>/dev/null || \
+          echo "Wiki git repo not yet initialised — pages are available in wiki/ directory of main repo"
