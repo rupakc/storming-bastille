@@ -3,8 +3,9 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Install system deps (for beautifulsoup4 / lxml)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
+RUN apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
+    && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv for fast, reproducible dependency installs

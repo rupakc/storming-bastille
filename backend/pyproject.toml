@@ -24,6 +24,7 @@ dependencies = [
     "pyjwt>=2.12.1",
     "bcrypt>=4.2.0",
     "google-cloud-storage>=2.18.0",
+    "lxml>=6.1.0",
 ]
 
 [project.optional-dependencies]
