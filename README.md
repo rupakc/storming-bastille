@@ -1,5 +1,8 @@
 # Storming Bastille
 
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Docs-blue?logo=github)](https://rupakc.github.io/storming-bastille/)
+[![Wiki](https://img.shields.io/badge/GitHub-Wiki-lightgrey?logo=github)](https://github.com/rupakc/storming-bastille/wiki)
+
 **Discover the hidden connections between historical events.**
 
 An AI-powered web application that uncovers causal relationships in history. Ask any free-text question and receive a streaming, interactive analysis: a Claude-generated narrative, an editable causal graph, a D3 timeline, and verified source citations — all rendered progressively as the pipeline runs.
