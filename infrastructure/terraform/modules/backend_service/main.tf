@@ -61,7 +61,7 @@ resource "google_cloud_run_v2_service" "backend" {
       }
       env {
         name  = "BACKUP_INTERVAL_SECONDS"
-        value = "300"
+        value = "60"
       }
       env {
         name  = "FRONTEND_URL"

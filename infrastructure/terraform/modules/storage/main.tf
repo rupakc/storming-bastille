@@ -19,10 +19,12 @@ resource "google_storage_bucket" "sqlite_backup" {
     action    { type = "Delete" }
   }
 
-  # Bucket location cannot be changed after creation. Ignore drift so Terraform
-  # accepts an existing bucket regardless of which region it was originally created in.
+  # Never allow Terraform to destroy or replace this bucket — it holds the only
+  # copy of the SQLite databases. prevent_destroy blocks both terraform destroy
+  # and any plan that would replace the resource (e.g. name or location change).
   lifecycle {
-    ignore_changes = [location]
+    prevent_destroy = true
+    ignore_changes  = [location]
   }
 }
 
