@@ -82,72 +82,104 @@ class QueryOrchestrator:
             yield {"event": "done", "data": {"session_id": session.id, "query_id": query_record.id}}
             return
 
-        # ── OPTIMIZED PIPELINE: search (background) → historian → analysis ──
+        # ── PARALLEL PIPELINE ─────────────────────────────────────────────────
+        # Two concurrent Haiku calls:
+        #   1. get_events_async  — short non-streaming call (~300 tokens, ~5-8s)
+        #                          produces the structured events JSON for the graph
+        #   2. stream_narrative_only — streams readable text immediately (~1s first token)
+        #
+        # The graph appears as soon as call 1 finishes while the user has been
+        # reading the narrative for several seconds. Causal analysis also starts
+        # the moment events arrive, running concurrently with the rest of the text.
 
-        # Kick off web search immediately but don't block on it — the historian
-        # starts right away so first token reaches the browser in ~1-2s.
-        # Search runs in background; cached results may arrive in time for the
-        # historian if the query was seen recently.
-        asyncio.create_task(self._fetch_search_context(request.query))
-        search_context = ""
+        # Start events fetch immediately as a background task
+        events_task: asyncio.Task = asyncio.create_task(
+            self.historian.get_events_async(request.query)
+        )
 
-        # Phase 1: Stream historian narrative (Haiku — first token in ~1-2s).
-        # The historian outputs JSON events FIRST, so we get early graph data
-        # mid-stream via the events_early signal, then start causal analysis
-        # as a background task while the narrative is still streaming.
         events: list[dict] = []
         narrative_text = ""
         sources: list[dict] = []
         causal_task: asyncio.Task | None = None
         graph_data_no_edges: dict = {}
+        events_dispatched = False
 
         try:
-            async for item in self.historian.stream_research(
-                request.query, search_context=search_context
+            async for chunk in self.historian.stream_narrative_only(
+                request.query, search_context=""
             ):
-                if item["type"] == "narrative":
-                    yield {"event": "narrative", "data": {"chunk": item["chunk"]}}
+                narrative_text += chunk
+                yield {"event": "narrative", "data": {"chunk": chunk}}
 
-                elif item["type"] in ("events_early", "events"):
-                    # Got structured events — send the initial graph + timeline
-                    # immediately (no edges yet). For events_early this fires while
-                    # the narrative is still streaming, so the graph appears early.
-                    events = item["data"]
-                    graph_data_no_edges = self.graph_builder._build_fallback_graph(
-                        events, [], query=request.query
-                    )
-                    yield {
-                        "event": "graph",
-                        "data": {
-                            "nodes": graph_data_no_edges.get("nodes", []),
-                            "edges": [],
-                        },
-                    }
-                    yield {
-                        "event": "timeline",
-                        "data": {"events": graph_data_no_edges.get("timeline", [])},
-                    }
-                    yield {
-                        "event": "status",
-                        "data": {
-                            "phase": "analyzing",
-                            "message": f"Found {len(events)} events, analyzing causal links...",
-                        },
-                    }
-                    # Start causal analysis in background so it runs concurrently
-                    # with the remainder of the narrative stream.
-                    if causal_task is None:
+                # Non-blocking check: send graph the moment events are ready
+                if not events_dispatched and events_task.done():
+                    try:
+                        events = events_task.result()
+                    except Exception as exc:
+                        logger.warning("Events task failed: %s", exc)
+                        events = []
+                    if events:
+                        events_dispatched = True
+                        graph_data_no_edges = self.graph_builder._build_fallback_graph(
+                            events, [], query=request.query
+                        )
+                        yield {
+                            "event": "graph",
+                            "data": {
+                                "nodes": graph_data_no_edges.get("nodes", []),
+                                "edges": [],
+                            },
+                        }
+                        yield {
+                            "event": "timeline",
+                            "data": {"events": graph_data_no_edges.get("timeline", [])},
+                        }
+                        yield {
+                            "event": "status",
+                            "data": {
+                                "phase": "analyzing",
+                                "message": f"Found {len(events)} events, analyzing causal links...",
+                            },
+                        }
                         causal_task = asyncio.create_task(
                             self._run_analysis(request.query, events)
                         )
 
-                elif item["type"] == "narrative_complete":
-                    narrative_text = item["text"]
-
         except Exception as exc:
-            logger.error("Historian research failed: %s", exc)
+            logger.error("Narrative streaming failed: %s", exc)
             yield {"event": "error", "data": {"message": f"Research phase failed: {exc}"}}
             return
+
+        # If events weren't ready during narrative, wait for them now
+        if not events_dispatched:
+            try:
+                events = await asyncio.wait_for(asyncio.shield(events_task), timeout=15.0)
+            except Exception as exc:
+                logger.error("Events fetch failed after narrative: %s", exc)
+                events = []
+
+            if events:
+                graph_data_no_edges = self.graph_builder._build_fallback_graph(
+                    events, [], query=request.query
+                )
+                yield {
+                    "event": "graph",
+                    "data": {"nodes": graph_data_no_edges.get("nodes", []), "edges": []},
+                }
+                yield {
+                    "event": "timeline",
+                    "data": {"events": graph_data_no_edges.get("timeline", [])},
+                }
+                yield {
+                    "event": "status",
+                    "data": {
+                        "phase": "analyzing",
+                        "message": f"Found {len(events)} events, analyzing causal links...",
+                    },
+                }
+                causal_task = asyncio.create_task(
+                    self._run_analysis(request.query, events)
+                )
 
         if not events:
             yield {
@@ -163,9 +195,7 @@ class QueryOrchestrator:
         relationships: list[dict] = []
         if causal_task is not None:
             try:
-                relationships = await asyncio.wait_for(
-                    asyncio.shield(causal_task), timeout=30.0
-                )
+                relationships = await asyncio.wait_for(asyncio.shield(causal_task), timeout=30.0)
                 logger.info("Causal analysis returned %d relationships", len(relationships))
             except asyncio.TimeoutError:
                 logger.error("Causal analysis timed out after 30s")
