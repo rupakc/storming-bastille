@@ -82,23 +82,24 @@ class QueryOrchestrator:
             yield {"event": "done", "data": {"session_id": session.id, "query_id": query_record.id}}
             return
 
-        # ── OPTIMIZED PIPELINE: search → historian (with citations) → analysis ──
+        # ── OPTIMIZED PIPELINE: search (background) → historian → analysis ──
 
-        # Kick off web search immediately
-        search_task = asyncio.create_task(self._fetch_search_context(request.query))
-
-        # Wait up to 2s for search results so historian can embed inline citations
-        # If search is slow, proceed without — speed > citations
+        # Kick off web search immediately but don't block on it — the historian
+        # starts right away so first token reaches the browser in ~1-2s.
+        # Search runs in background; cached results may arrive in time for the
+        # historian if the query was seen recently.
+        asyncio.create_task(self._fetch_search_context(request.query))
         search_context = ""
-        try:
-            search_context = await asyncio.wait_for(asyncio.shield(search_task), timeout=2.0)
-        except (asyncio.TimeoutError, Exception):
-            search_context = ""
 
-        # Phase 1: Stream historian narrative (Haiku — first token in ~1-2s)
+        # Phase 1: Stream historian narrative (Haiku — first token in ~1-2s).
+        # The historian outputs JSON events FIRST, so we get early graph data
+        # mid-stream via the events_early signal, then start causal analysis
+        # as a background task while the narrative is still streaming.
         events: list[dict] = []
         narrative_text = ""
         sources: list[dict] = []
+        causal_task: asyncio.Task | None = None
+        graph_data_no_edges: dict = {}
 
         try:
             async for item in self.historian.stream_research(
@@ -106,10 +107,43 @@ class QueryOrchestrator:
             ):
                 if item["type"] == "narrative":
                     yield {"event": "narrative", "data": {"chunk": item["chunk"]}}
-                elif item["type"] == "events":
+
+                elif item["type"] in ("events_early", "events"):
+                    # Got structured events — send the initial graph + timeline
+                    # immediately (no edges yet). For events_early this fires while
+                    # the narrative is still streaming, so the graph appears early.
                     events = item["data"]
+                    graph_data_no_edges = self.graph_builder._build_fallback_graph(
+                        events, [], query=request.query
+                    )
+                    yield {
+                        "event": "graph",
+                        "data": {
+                            "nodes": graph_data_no_edges.get("nodes", []),
+                            "edges": [],
+                        },
+                    }
+                    yield {
+                        "event": "timeline",
+                        "data": {"events": graph_data_no_edges.get("timeline", [])},
+                    }
+                    yield {
+                        "event": "status",
+                        "data": {
+                            "phase": "analyzing",
+                            "message": f"Found {len(events)} events, analyzing causal links...",
+                        },
+                    }
+                    # Start causal analysis in background so it runs concurrently
+                    # with the remainder of the narrative stream.
+                    if causal_task is None:
+                        causal_task = asyncio.create_task(
+                            self._run_analysis(request.query, events)
+                        )
+
                 elif item["type"] == "narrative_complete":
                     narrative_text = item["text"]
+
         except Exception as exc:
             logger.error("Historian research failed: %s", exc)
             yield {"event": "error", "data": {"message": f"Research phase failed: {exc}"}}
@@ -124,36 +158,19 @@ class QueryOrchestrator:
             }
             return
 
-        # Phase 2: IMMEDIATELY send graph nodes + timeline (no edges yet)
-        # This ensures the user sees the diagram and timeline within seconds of narrative
-        graph_data_no_edges = self.graph_builder._build_fallback_graph(
-            events, [], query=request.query
-        )
-
-        yield {
-            "event": "graph",
-            "data": {"nodes": graph_data_no_edges.get("nodes", []), "edges": []},
-        }
-        yield {"event": "timeline", "data": {"events": graph_data_no_edges.get("timeline", [])}}
-        yield {
-            "event": "status",
-            "data": {
-                "phase": "analyzing",
-                "message": f"Found {len(events)} events, analyzing causal links...",
-            },
-        }
-
-        # Phase 3: Run causal analysis (background) then send edge update
+        # Phase 2: Await causal analysis (already running in background).
+        # By the time narrative finishes it may already be done.
         relationships: list[dict] = []
-        try:
-            relationships = await asyncio.wait_for(
-                self._run_analysis(request.query, events), timeout=30.0
-            )
-            logger.info("Causal analysis returned %d relationships", len(relationships))
-        except asyncio.TimeoutError:
-            logger.error("Causal analysis timed out after 30s")
-        except Exception as exc:
-            logger.error("Causal analysis failed: %s", exc, exc_info=True)
+        if causal_task is not None:
+            try:
+                relationships = await asyncio.wait_for(
+                    asyncio.shield(causal_task), timeout=30.0
+                )
+                logger.info("Causal analysis returned %d relationships", len(relationships))
+            except asyncio.TimeoutError:
+                logger.error("Causal analysis timed out after 30s")
+            except Exception as exc:
+                logger.error("Causal analysis failed: %s", exc, exc_info=True)
 
         # Send updated graph WITH edges (nodes stay the same, edges added)
         if relationships:

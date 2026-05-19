@@ -93,11 +93,16 @@ class HistorianAgent(BaseAgent):
     async def stream_research(
         self, query: str, search_context: str = ""
     ) -> AsyncGenerator[dict, None]:
-        """Stream narrative and events. search_context is pre-fetched web search results."""
+        """Stream narrative and events. search_context is pre-fetched web search results.
+
+        Yields events_early as soon as the JSON block closes (mid-stream) so the
+        orchestrator can send the graph while the narrative is still streaming.
+        Falls back to a final events yield at the end if extraction fails mid-stream.
+        """
         self._search_results = []
         narrative_chunks: list[str] = []
+        events_emitted = False
 
-        # Build prompt with search context injected (no tool calls needed)
         if search_context:
             enriched = (
                 f"{query}\n\n"
@@ -111,10 +116,22 @@ class HistorianAgent(BaseAgent):
             narrative_chunks.append(chunk)
             yield {"type": "narrative", "chunk": chunk}
 
-        full_narrative = "".join(narrative_chunks)
-        events = self._parse_events(full_narrative)
+            # Try to extract events as soon as the closing ``` fence arrives.
+            # The historian always outputs JSON first, so this fires ~200-400 tokens in,
+            # well before the narrative sections start.
+            if not events_emitted and "```" in chunk:
+                partial = "".join(narrative_chunks)
+                events = self._parse_events(partial)
+                if events:
+                    events_emitted = True
+                    yield {"type": "events_early", "data": events}
 
-        yield {"type": "events", "data": events}
+        full_narrative = "".join(narrative_chunks)
+
+        if not events_emitted:
+            events = self._parse_events(full_narrative)
+            yield {"type": "events", "data": events}
+
         yield {"type": "narrative_complete", "text": full_narrative}
 
     def _parse_events(self, text: str) -> list[dict]:
