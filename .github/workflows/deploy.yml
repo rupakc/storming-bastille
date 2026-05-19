@@ -193,6 +193,32 @@ jobs:
         run: terraform validate
         working-directory: infrastructure/terraform
 
+      - name: Import pre-existing GCP resources
+        run: |
+          # The bootstrap job creates these via gcloud before Terraform runs.
+          # Import them into state so Terraform manages them without re-creating.
+          import_if_missing() {
+            local addr="$1" id="$2"
+            if terraform state show "$addr" &>/dev/null; then
+              echo "Already in state: $addr"
+            else
+              terraform import "$addr" "$id" || echo "Import failed (resource may not exist yet): $addr"
+            fi
+          }
+          import_if_missing \
+            module.artifact_registry.google_artifact_registry_repository.images \
+            "projects/${TF_VAR_project_id}/locations/${TF_VAR_region}/repositories/${TF_VAR_app_name}"
+          import_if_missing \
+            'module.secrets.google_secret_manager_secret.secrets["anthropic-api-key"]' \
+            "projects/${TF_VAR_project_id}/secrets/anthropic-api-key"
+          import_if_missing \
+            'module.secrets.google_secret_manager_secret.secrets["jwt-secret-key"]' \
+            "projects/${TF_VAR_project_id}/secrets/jwt-secret-key"
+          import_if_missing \
+            'module.secrets.google_secret_manager_secret.secrets["admin-password"]' \
+            "projects/${TF_VAR_project_id}/secrets/admin-password"
+        working-directory: infrastructure/terraform
+
       - name: Terraform Plan
         run: terraform plan -out=tfplan
         working-directory: infrastructure/terraform
