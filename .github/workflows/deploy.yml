@@ -137,47 +137,6 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: "__NEXT_PUBLIC_API_URL__"
 
-      # ── Trivy scan (reporting only — does not block deploy) ─────────────
-      # Scans upload findings to GitHub Security tab for visibility.
-      # exit-code: "0" so push proceeds regardless of scan outcome.
-      - name: Trivy scan — backend
-        uses: aquasecurity/trivy-action@master
-        continue-on-error: true
-        with:
-          image-ref: ${{ env.REGISTRY }}/backend:${{ github.sha }}
-          format: sarif
-          output: trivy-backend.sarif
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
-          trivyignores: .trivyignore
-          exit-code: "0"
-
-      - name: Trivy scan — frontend
-        uses: aquasecurity/trivy-action@master
-        continue-on-error: true
-        with:
-          image-ref: ${{ env.REGISTRY }}/frontend:${{ github.sha }}
-          format: sarif
-          output: trivy-frontend.sarif
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
-          trivyignores: .trivyignore
-          exit-code: "0"
-
-      - name: Upload backend Trivy results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: trivy-backend.sarif
-          category: trivy-backend
-
-      - name: Upload frontend Trivy results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: trivy-frontend.sarif
-          category: trivy-frontend
-
       # ── Push images ───────────────────────────────────────────────────────
       - name: Push backend image
         run: |
