@@ -7,7 +7,7 @@ resource "google_storage_bucket" "sqlite_backup" {
   name                        = "${var.project_id}-${var.app_name}-data"
   location                    = var.region
   uniform_bucket_level_access = true
-  force_destroy               = false
+  force_destroy               = true
 
   versioning {
     enabled = true
