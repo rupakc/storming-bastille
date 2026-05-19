@@ -2,7 +2,6 @@
 
 import { AnimatePresence } from "motion/react";
 import { SessionCard } from "./SessionCard";
-import { LoadingState } from "@/components/shared/LoadingState";
 import { Inbox } from "lucide-react";
 import type { SessionSummary } from "@/lib/types";
 

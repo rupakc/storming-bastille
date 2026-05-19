@@ -132,9 +132,12 @@ export function CausalGraph({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onNodeClick={handleNodeClick as any}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onEdgeClick={handleEdgeClick as any}
         onPaneClick={handlePaneClick}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onInit={handleInit as any}
         fitView
         fitViewOptions={{ padding: 0.05, duration: 400, maxZoom: 1.3 }}

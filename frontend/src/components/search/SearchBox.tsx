@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, ArrowRight, Loader2 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
 
 const PLACEHOLDERS = [
   "What caused the French Revolution?",
@@ -60,11 +59,6 @@ export function SearchBox({
     },
     [query, isLoading, onSubmit]
   );
-
-  // Allow parent to set value (e.g., from presets)
-  const setQueryValue = useCallback((value: string) => {
-    setQuery(value);
-  }, []);
 
   return (
     <form onSubmit={handleSubmit} className="relative w-full max-w-2xl mx-auto">

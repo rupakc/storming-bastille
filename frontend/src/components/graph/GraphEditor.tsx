@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, Trash2, Save } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { cn, categoryColor } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import type { EventData, EdgeData } from "@/lib/types";
 import type { FlowNode, FlowEdge } from "@/hooks/useGraph";
 

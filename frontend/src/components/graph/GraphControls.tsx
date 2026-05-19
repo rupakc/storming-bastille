@@ -11,7 +11,6 @@ import {
   ArrowUpDown,
 } from "lucide-react";
 import { useState, useCallback } from "react";
-import { cn } from "@/lib/utils";
 import type { LayoutDirection } from "@/lib/graph-layout";
 
 interface GraphControlsProps {

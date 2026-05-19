@@ -1,6 +1,5 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 
 type Variant = "search" | "results" | "graph";
 
