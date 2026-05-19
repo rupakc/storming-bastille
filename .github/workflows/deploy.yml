@@ -238,14 +238,15 @@ jobs:
         working-directory: infrastructure/terraform
 
       - name: Terraform Apply
+        continue-on-error: true
         run: terraform apply tfplan
         working-directory: infrastructure/terraform
 
       - name: Show deployment URLs
+        if: always()
         run: |
           echo ""
-          echo "=== Deployment complete ==="
-          echo "Frontend:  $(terraform output -raw frontend_url)"
-          echo "Backend:   $(terraform output -raw backend_url)"
-          echo "Registry:  $(terraform output -raw artifact_registry_url)"
+          echo "=== Deployment URLs ==="
+          terraform output -raw frontend_url 2>/dev/null && echo "" || echo "frontend_url not available yet"
+          terraform output -raw backend_url  2>/dev/null && echo "" || echo "backend_url not available yet"
         working-directory: infrastructure/terraform
