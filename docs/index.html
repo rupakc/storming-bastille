@@ -8,21 +8,28 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0d1117;
-      --bg-card: #161b22;
-      --bg-card-hover: #1c2128;
-      --border: #30363d;
-      --accent: #8b5cf6;
-      --accent-light: #a78bfa;
-      --accent-dim: rgba(139, 92, 246, 0.15);
-      --text: #e6edf3;
-      --text-muted: #8b949e;
-      --text-dim: #6e7681;
-      --green: #3fb950;
-      --orange: #d29922;
-      --red: #f85149;
-      --blue: #58a6ff;
-      --teal: #39d353;
+      --violet:         #7c3aed;
+      --violet-light:   #ede9fe;
+      --violet-mid:     #8b5cf6;
+      --indigo:         #4f46e5;
+      --indigo-light:   #e0e7ff;
+      --rose:           #e11d48;
+      --rose-light:     #fff1f2;
+      --amber:          #d97706;
+      --amber-light:    #fef3c7;
+      --sky:            #0ea5e9;
+      --sky-light:      #e0f2fe;
+      --teal:           #0d9488;
+      --teal-light:     #ccfbf1;
+      --bg:             #f8fafc;
+      --bg-white:       #ffffff;
+      --bg-subtle:      #f1f5f9;
+      --border:         #e2e8f0;
+      --border-md:      #cbd5e1;
+      --text:           #0f172a;
+      --text-mid:       #334155;
+      --text-muted:     #64748b;
+      --code-bg:        #1e293b;
     }
 
     html { scroll-behavior: smooth; }
@@ -30,686 +37,618 @@
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-      font-size: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
       line-height: 1.6;
-      min-height: 100vh;
+      font-size: 16px;
     }
+
+    a { color: var(--violet); text-decoration: none; }
+    a:hover { text-decoration: underline; }
 
     /* ── NAV ── */
     nav {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: rgba(13, 17, 23, 0.85);
-      backdrop-filter: blur(12px);
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       border-bottom: 1px solid var(--border);
       padding: 0 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 62px;
     }
-
     .nav-brand {
-      font-weight: 700;
-      font-size: 1.05rem;
-      color: var(--text);
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+      font-weight: 800; font-size: 1.05rem; color: var(--text);
+      display: flex; align-items: center; gap: 0.55rem;
+      letter-spacing: -0.02em;
     }
-
-    .nav-brand .icon {
-      width: 24px;
-      height: 24px;
-      background: var(--accent);
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 13px;
+    .nav-brand-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--violet), var(--rose));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; flex-shrink: 0; color: #fff;
     }
-
-    .nav-links {
-      display: flex;
-      gap: 1.5rem;
-      list-style: none;
+    .nav-links { display: flex; gap: 1.75rem; align-items: center; }
+    .nav-links a { color: var(--text-muted); font-size: 0.9rem; font-weight: 500; transition: color 0.15s; }
+    .nav-links a:hover { color: var(--text); text-decoration: none; }
+    .nav-cta {
+      background: var(--violet); color: #fff !important;
+      padding: 0.45rem 1.1rem; border-radius: 7px;
+      font-weight: 600 !important; font-size: 0.85rem !important;
+      transition: background 0.15s !important;
     }
-
-    .nav-links a {
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 0.9rem;
-      transition: color 0.15s;
-    }
-
-    .nav-links a:hover { color: var(--text); }
+    .nav-cta:hover { background: var(--indigo) !important; text-decoration: none !important; }
 
     /* ── HERO ── */
     .hero {
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 5rem 2rem 4rem;
       text-align: center;
+      padding: 6.5rem 2rem 5rem;
+      max-width: 900px;
+      margin: 0 auto;
+      position: relative;
     }
-
+    .hero-blob {
+      position: absolute;
+      width: 700px; height: 500px;
+      top: -60px; left: 50%;
+      transform: translateX(-50%);
+      background: radial-gradient(ellipse at 50% 40%, rgba(124,58,237,0.1) 0%, rgba(225,29,72,0.06) 45%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    .hero > *:not(.hero-blob) { position: relative; z-index: 1; }
     .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      background: var(--accent-dim);
-      border: 1px solid rgba(139, 92, 246, 0.3);
-      color: var(--accent-light);
-      font-size: 0.8rem;
-      font-weight: 500;
-      padding: 0.3rem 0.75rem;
-      border-radius: 100px;
-      margin-bottom: 1.5rem;
-      letter-spacing: 0.02em;
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: var(--violet-light);
+      border: 1px solid rgba(124,58,237,0.3);
+      color: var(--violet);
+      padding: 0.3rem 1rem; border-radius: 999px;
+      font-size: 0.78rem; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      margin-bottom: 1.75rem;
     }
-
+    .hero-badge-dot { width: 6px; height: 6px; background: var(--violet); border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.4;transform:scale(.7);} }
     .hero h1 {
       font-size: clamp(2.4rem, 6vw, 4rem);
-      font-weight: 800;
-      line-height: 1.1;
-      letter-spacing: -0.03em;
-      margin-bottom: 1rem;
-      background: linear-gradient(135deg, #e6edf3 0%, #a78bfa 50%, #8b5cf6 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      font-weight: 900; line-height: 1.08;
+      letter-spacing: -0.04em; margin-bottom: 1.4rem; color: var(--text);
     }
-
-    .hero-subtitle {
-      font-size: clamp(1rem, 2.5vw, 1.25rem);
-      color: var(--text-muted);
-      max-width: 560px;
-      margin: 0 auto 2.5rem;
-      line-height: 1.6;
+    .hero h1 .grad {
+      background: linear-gradient(135deg, var(--violet) 0%, var(--rose) 55%, var(--amber) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
-
-    .hero-cta {
-      display: flex;
-      gap: 0.75rem;
-      justify-content: center;
-      flex-wrap: wrap;
+    .hero-sub {
+      font-size: 1.15rem; color: var(--text-muted);
+      max-width: 640px; margin: 0 auto 2.75rem; line-height: 1.8;
     }
-
+    .hero-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
     .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      padding: 0.65rem 1.4rem;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      text-decoration: none;
-      transition: all 0.15s;
-      cursor: pointer;
+      display: inline-flex; align-items: center; gap: 0.45rem;
+      padding: 0.7rem 1.5rem; border-radius: 9px;
+      font-size: 0.95rem; font-weight: 700;
+      transition: all 0.18s; cursor: pointer; border: none; letter-spacing: -0.01em;
     }
+    .btn-primary { background: linear-gradient(135deg, var(--violet), var(--indigo)); color: #fff; box-shadow: 0 4px 14px rgba(124,58,237,0.35); }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(124,58,237,0.45); text-decoration: none; }
+    .btn-ghost { background: var(--bg-white); color: var(--text); border: 1.5px solid var(--border-md); box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .btn-ghost:hover { border-color: var(--violet); color: var(--violet); text-decoration: none; }
 
-    .btn-primary {
-      background: var(--accent);
-      color: #fff;
-      border: 1px solid transparent;
-    }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+    .fade-up { animation: fadeUp 0.6s ease forwards; }
+    .fade-up-d1 { animation-delay: 0.1s; opacity:0; }
+    .fade-up-d2 { animation-delay: 0.22s; opacity:0; }
+    .fade-up-d3 { animation-delay: 0.34s; opacity:0; }
+    .fade-up-d4 { animation-delay: 0.46s; opacity:0; }
 
-    .btn-primary:hover {
-      background: #7c3aed;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+    /* ── STATS ── */
+    .stats-strip {
+      background: var(--bg-white);
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      padding: 2.25rem 2rem;
     }
-
-    .btn-secondary {
-      background: transparent;
-      color: var(--text);
-      border: 1px solid var(--border);
+    .stats-inner {
+      max-width: 1060px; margin: 0 auto;
+      display: flex; justify-content: space-around; flex-wrap: wrap; gap: 2rem;
     }
-
-    .btn-secondary:hover {
-      background: var(--bg-card);
-      border-color: var(--accent);
-      transform: translateY(-1px);
+    .stat { text-align: center; }
+    .stat-num {
+      font-size: 2.4rem; font-weight: 900; letter-spacing: -0.04em;
+      background: linear-gradient(135deg, var(--violet), var(--rose));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
+    .stat-label { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; margin-top: 0.15rem; }
 
     /* ── SECTIONS ── */
-    section {
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 3rem 2rem;
-    }
-
+    section { padding: 5.5rem 2rem; }
+    .section-inner { max-width: 1080px; margin: 0 auto; }
     .section-label {
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--accent-light);
-      margin-bottom: 0.5rem;
+      font-size: 0.73rem; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--violet); margin-bottom: 0.6rem;
     }
+    .section-title { font-size: clamp(1.7rem, 3.2vw, 2.35rem); font-weight: 800; margin-bottom: 0.9rem; letter-spacing: -0.03em; }
+    .section-subtitle { color: var(--text-muted); max-width: 580px; margin-bottom: 3.5rem; font-size: 1.05rem; line-height: 1.75; }
 
-    .section-title {
-      font-size: clamp(1.5rem, 3vw, 2rem);
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      margin-bottom: 0.75rem;
+    /* ── PULL QUOTE ── */
+    .pull-quote {
+      border-left: 4px solid var(--violet);
+      padding: 1.25rem 1.75rem;
+      background: var(--violet-light);
+      border-radius: 0 12px 12px 0;
+      margin-bottom: 0;
+      max-width: 760px;
     }
-
-    .section-desc {
-      color: var(--text-muted);
-      max-width: 600px;
-      margin-bottom: 2.5rem;
-      line-height: 1.7;
-    }
-
-    /* ── WHAT IT DOES ── */
-    .what-it-does p {
-      font-size: 1.05rem;
-      line-height: 1.8;
-      color: var(--text);
-      max-width: 720px;
-      border-left: 3px solid var(--accent);
-      padding-left: 1.5rem;
-    }
+    .pull-quote p { font-size: 1.08rem; line-height: 1.8; color: var(--text-mid); }
 
     /* ── FEATURE CARDS ── */
-    .feature-grid {
+    .card-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 1rem;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 1.4rem;
     }
-
-    .feature-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
-      transition: all 0.2s;
+    .card {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: 14px; padding: 1.75rem;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      position: relative; overflow: hidden;
     }
-
-    .feature-card:hover {
-      background: var(--bg-card-hover);
-      border-color: var(--accent);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.1);
+    .card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      opacity: 0; transition: opacity 0.2s;
     }
-
-    .feature-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.1rem;
-      margin-bottom: 1rem;
+    .card:hover { transform: translateY(-3px); }
+    .card:hover::before { opacity: 1; }
+    .card.vi::before { background: linear-gradient(90deg, var(--violet), var(--violet-mid)); }
+    .card.in::before { background: linear-gradient(90deg, var(--indigo), #6366f1); }
+    .card.ro::before { background: linear-gradient(90deg, var(--rose), #f43f5e); }
+    .card.am::before { background: linear-gradient(90deg, var(--amber), #f59e0b); }
+    .card.te::before { background: linear-gradient(90deg, var(--teal), #14b8a6); }
+    .card.sk::before { background: linear-gradient(90deg, var(--sky), #38bdf8); }
+    .card:hover.vi { border-color: rgba(124,58,237,0.4); box-shadow: 0 12px 32px rgba(124,58,237,0.1); }
+    .card:hover.in { border-color: rgba(79,70,229,0.4); box-shadow: 0 12px 32px rgba(79,70,229,0.1); }
+    .card:hover.ro { border-color: rgba(225,29,72,0.4); box-shadow: 0 12px 32px rgba(225,29,72,0.1); }
+    .card:hover.am { border-color: rgba(217,119,6,0.4); box-shadow: 0 12px 32px rgba(217,119,6,0.1); }
+    .card:hover.te { border-color: rgba(13,148,136,0.4); box-shadow: 0 12px 32px rgba(13,148,136,0.1); }
+    .card:hover.sk { border-color: rgba(14,165,233,0.4); box-shadow: 0 12px 32px rgba(14,165,233,0.1); }
+    .card-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; margin-bottom: 1rem;
     }
-
-    .feature-card h3 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 0.4rem;
-    }
-
-    .feature-card p {
-      font-size: 0.875rem;
-      color: var(--text-muted);
-      line-height: 1.6;
-    }
+    .card.vi .card-icon { background: var(--violet-light); }
+    .card.in .card-icon { background: var(--indigo-light); }
+    .card.ro .card-icon { background: var(--rose-light); }
+    .card.am .card-icon { background: var(--amber-light); }
+    .card.te .card-icon { background: var(--teal-light); }
+    .card.sk .card-icon { background: var(--sky-light); }
+    .card h3 { font-size: 1.02rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.01em; }
+    .card p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.65; }
 
     /* ── PIPELINE ── */
-    .pipeline {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      position: relative;
-    }
-
+    #howitworks { background: var(--bg-subtle); }
+    .pipeline { display: flex; flex-direction: column; gap: 0; position: relative; max-width: 760px; }
     .pipeline::before {
       content: '';
-      position: absolute;
-      left: 20px;
-      top: 40px;
-      bottom: 40px;
-      width: 2px;
-      background: linear-gradient(to bottom, var(--accent), rgba(139, 92, 246, 0.1));
+      position: absolute; left: 25px; top: 50px; bottom: 50px; width: 2px;
+      background: linear-gradient(to bottom, var(--violet), rgba(124,58,237,0.15));
+      z-index: 0;
     }
-
     .pipeline-step {
-      display: flex;
-      gap: 1.5rem;
-      padding: 1.5rem 0;
-      position: relative;
+      display: flex; gap: 1.5rem; padding: 1.5rem 0;
+      position: relative; z-index: 1;
     }
-
-    .step-num {
-      flex-shrink: 0;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: var(--accent);
-      color: #fff;
-      font-weight: 700;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      z-index: 1;
-      border: 3px solid var(--bg);
+    .pipe-num {
+      flex-shrink: 0; width: 50px; height: 50px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 1rem; color: #fff;
+      position: relative; z-index: 1;
+      border: 3px solid var(--bg-subtle);
     }
-
-    .step-content h3 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 0.3rem;
-    }
-
-    .step-content p {
-      font-size: 0.875rem;
-      color: var(--text-muted);
-      line-height: 1.6;
-    }
-
-    .step-tag {
-      display: inline-block;
-      font-size: 0.7rem;
-      font-weight: 600;
-      padding: 0.15rem 0.5rem;
-      border-radius: 4px;
-      margin-bottom: 0.4rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-
-    /* ── TECH STACK ── */
-    .tech-section { border-top: 1px solid var(--border); }
-
-    .tech-group {
-      margin-bottom: 1.5rem;
-    }
-
-    .tech-group-label {
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-dim);
-      margin-bottom: 0.6rem;
-    }
-
-    .tech-badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    .badge {
-      display: inline-block;
-      font-size: 0.8rem;
-      font-weight: 500;
-      padding: 0.25rem 0.7rem;
-      border-radius: 6px;
+    .pipe-num.p1 { background: var(--sky); }
+    .pipe-num.p2 { background: var(--violet); }
+    .pipe-num.p3 { background: var(--amber); }
+    .pipe-num.p4 { background: var(--teal); }
+    .pipe-body { padding-top: 0.3rem; }
+    .pipe-tag {
+      display: inline-block; font-size: 0.7rem; font-weight: 700;
+      padding: 0.18rem 0.6rem; border-radius: 5px;
+      margin-bottom: 0.45rem; letter-spacing: 0.04em; text-transform: uppercase;
       border: 1px solid;
     }
+    .pipe-tag.sky { background: var(--sky-light); color: var(--sky); border-color: rgba(14,165,233,0.3); }
+    .pipe-tag.vi  { background: var(--violet-light); color: var(--violet); border-color: rgba(124,58,237,0.3); }
+    .pipe-tag.am  { background: var(--amber-light); color: var(--amber); border-color: rgba(217,119,6,0.3); }
+    .pipe-tag.te  { background: var(--teal-light); color: var(--teal); border-color: rgba(13,148,136,0.3); }
+    .pipe-body h3 { font-size: 1.02rem; font-weight: 800; margin-bottom: 0.35rem; }
+    .pipe-body p { font-size: 0.88rem; color: var(--text-muted); line-height: 1.65; }
 
-    .badge-purple { background: rgba(139, 92, 246, 0.1); border-color: rgba(139, 92, 246, 0.3); color: #a78bfa; }
-    .badge-blue { background: rgba(88, 166, 255, 0.1); border-color: rgba(88, 166, 255, 0.3); color: #58a6ff; }
-    .badge-green { background: rgba(63, 185, 80, 0.1); border-color: rgba(63, 185, 80, 0.3); color: #3fb950; }
-    .badge-orange { background: rgba(210, 153, 34, 0.1); border-color: rgba(210, 153, 34, 0.3); color: #d29922; }
-    .badge-teal { background: rgba(57, 211, 83, 0.08); border-color: rgba(57, 211, 83, 0.25); color: #39d353; }
+    /* ── TECH STACK ── */
+    .stack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 2rem; }
+    .stack-group h4 {
+      font-size: 0.78rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 0.9rem;
+    }
+    .badge-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .badge {
+      padding: 0.35rem 0.85rem; border-radius: 7px;
+      font-size: 0.8rem; font-weight: 600;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      border: 1px solid;
+    }
+    .badge.vi  { background: var(--violet-light); color: #6d28d9; border-color: rgba(124,58,237,0.3); }
+    .badge.in  { background: var(--indigo-light); color: #4338ca; border-color: rgba(79,70,229,0.3); }
+    .badge.am  { background: var(--amber-light); color: #92400e; border-color: rgba(217,119,6,0.3); }
+    .badge.te  { background: var(--teal-light); color: #0f766e; border-color: rgba(13,148,136,0.3); }
+    .badge.ro  { background: var(--rose-light); color: #9f1239; border-color: rgba(225,29,72,0.3); }
 
     /* ── QUICKSTART ── */
-    .quickstart { border-top: 1px solid var(--border); }
-
-    .code-block {
-      background: #010409;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
+    #quickstart { background: var(--bg-white); }
+    .qs-steps { display: flex; flex-direction: column; gap: 0; margin-bottom: 2rem; }
+    .qs-step {
+      display: flex; gap: 1.25rem; align-items: flex-start;
+      padding: 1.4rem 0; border-bottom: 1px solid var(--border);
     }
-
-    .code-header {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1.25rem;
-      border-bottom: 1px solid var(--border);
-      background: #0d1117;
+    .qs-step:last-child { border-bottom: none; }
+    .qs-num {
+      width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--violet), var(--indigo));
+      color: #fff; font-weight: 800; font-size: 0.9rem;
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 0.1rem;
     }
-
-    .code-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-    }
-
-    .code-title {
-      font-size: 0.8rem;
-      color: var(--text-dim);
-      margin-left: auto;
-      font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
-    }
-
+    .qs-body h4 { font-size: 0.98rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .qs-body p { color: var(--text-muted); font-size: 0.88rem; line-height: 1.6; }
     pre {
-      padding: 1.5rem 1.25rem;
-      overflow-x: auto;
-      font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace;
-      font-size: 0.85rem;
-      line-height: 1.7;
+      background: var(--code-bg); border-radius: 12px;
+      padding: 1.6rem; overflow-x: auto;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 0.875rem; line-height: 1.8; color: #e2e8f0; margin-top: 1.5rem;
     }
+    .cc  { color: #64748b; }
+    .cmd { color: #a78bfa; }
+    .url { color: #fb923c; }
+    .pr  { color: #64748b; user-select: none; }
 
-    .c-comment { color: #6e7681; }
-    .c-cmd { color: #79c0ff; }
-    .c-str { color: #a5d6ff; }
-    .c-var { color: var(--accent-light); }
-    .c-prompt { color: var(--text-dim); user-select: none; }
-
-    /* ── DIVIDER ── */
-    .divider {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin: 0 2rem;
+    /* ── CTA ── */
+    .cta-strip {
+      background: linear-gradient(135deg, #f5f3ff 0%, #fff1f2 50%, #fffbeb 100%);
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      padding: 5rem 2rem; text-align: center;
     }
+    .cta-strip h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 800; letter-spacing: -0.03em; margin-bottom: 0.9rem; }
+    .cta-strip p { color: var(--text-muted); font-size: 1.05rem; margin-bottom: 2rem; }
+
+    /* ── RESOURCES ── */
+    .links-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.1rem; }
+    .link-card {
+      background: var(--bg-white); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.35rem 1.5rem;
+      display: flex; flex-direction: column; gap: 0.3rem;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+    }
+    .link-card:hover { border-color: var(--violet); box-shadow: 0 6px 20px rgba(124,58,237,0.1); transform: translateY(-2px); text-decoration: none; }
+    .link-card-label { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-muted); }
+    .link-card-title { font-size: 1rem; font-weight: 700; color: var(--text); }
+    .link-card-desc { font-size: 0.84rem; color: var(--text-muted); line-height: 1.55; }
 
     /* ── FOOTER ── */
     footer {
-      border-top: 1px solid var(--border);
-      padding: 2rem;
-      text-align: center;
-      color: var(--text-dim);
-      font-size: 0.85rem;
+      background: var(--bg-white); border-top: 1px solid var(--border);
+      padding: 2.75rem 2rem; text-align: center;
+      color: var(--text-muted); font-size: 0.85rem;
+    }
+    footer a { color: var(--text-muted); }
+    footer a:hover { color: var(--violet); text-decoration: none; }
+    .footer-links { display: flex; gap: 1.75rem; justify-content: center; flex-wrap: wrap; margin-bottom: 0.75rem; }
+    .footer-brand {
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      font-weight: 700; color: var(--text); font-size: 1rem; margin-bottom: 0.5rem;
+    }
+    .footer-brand-icon {
+      width: 26px; height: 26px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--violet), var(--rose));
+      display: flex; align-items: center; justify-content: center; font-size: 0.8rem; color: #fff;
     }
 
-    footer a {
-      color: var(--text-muted);
-      text-decoration: none;
-      transition: color 0.15s;
-    }
-
-    footer a:hover { color: var(--accent-light); }
-
-    .footer-links {
-      display: flex;
-      gap: 1.5rem;
-      justify-content: center;
-      margin-bottom: 1rem;
-    }
-
-    /* ── GLOW ORBS (decorative) ── */
-    .hero-glow {
-      position: fixed;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 600px;
-      height: 300px;
-      background: radial-gradient(ellipse at 50% 0%, rgba(139, 92, 246, 0.12) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .hero { position: relative; z-index: 1; }
-
+    /* ── RESPONSIVE ── */
     @media (max-width: 640px) {
-      nav { padding: 0 1rem; }
-      section { padding: 2rem 1rem; }
+      nav .nav-links { display: none; }
+      .hero { padding: 4.5rem 1.25rem 3.5rem; }
       .pipeline::before { display: none; }
-      .nav-links { display: none; }
     }
   </style>
 </head>
 <body>
 
-<div class="hero-glow"></div>
-
-<!-- NAV -->
 <nav>
   <a class="nav-brand" href="#">
-    <span class="icon">⚔</span>
+    <span class="nav-brand-icon">&#x2694;</span>
     Storming Bastille
   </a>
-  <ul class="nav-links">
-    <li><a href="#features">Features</a></li>
-    <li><a href="#how-it-works">How it works</a></li>
-    <li><a href="#quickstart">Quick start</a></li>
-    <li><a href="https://github.com/rupakc/storming-bastille/wiki">Wiki</a></li>
-    <li><a href="https://github.com/rupakc/storming-bastille">GitHub</a></li>
-  </ul>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#howitworks">How It Works</a>
+    <a href="#quickstart">Quick Start</a>
+    <a href="https://github.com/rupakc/storming-bastille/wiki">Wiki</a>
+    <a class="nav-cta" href="https://github.com/rupakc/storming-bastille">GitHub &rarr;</a>
+  </div>
 </nav>
 
-<!-- HERO -->
-<section class="hero">
-  <div class="hero-badge">
-    <span>⚡</span> Multi-agent AI · Real-time streaming
-  </div>
-  <h1>Uncover the hidden causes behind history's turning points</h1>
-  <p class="hero-subtitle">
-    Storming Bastille is an AI research tool that maps causal chains between historical events — not just facts, but the relationships between them.
+<div class="hero">
+  <div class="hero-blob"></div>
+  <div class="hero-badge fade-up fade-up-d1"><span class="hero-badge-dot"></span> Multi-agent AI &middot; Real-time streaming</div>
+  <h1 class="fade-up fade-up-d2">Uncover the causes behind<br/><span class="grad">history's turning points</span></h1>
+  <p class="hero-sub fade-up fade-up-d3">
+    Storming Bastille maps causal chains between historical events &mdash; not just facts,
+    but the relationships between them. Five AI agents coordinate to produce a streamed narrative,
+    an interactive causal graph, a zoomable timeline, and verified source citations.
   </p>
-  <div class="hero-cta">
-    <a class="btn btn-primary" href="https://github.com/rupakc/storming-bastille">
-      ★ View on GitHub
-    </a>
-    <a class="btn btn-secondary" href="https://github.com/rupakc/storming-bastille/wiki">
-      Read the Wiki →
-    </a>
+  <div class="hero-buttons fade-up fade-up-d4">
+    <a class="btn btn-primary" href="https://github.com/rupakc/storming-bastille">&#9733; View on GitHub</a>
+    <a class="btn btn-ghost" href="https://github.com/rupakc/storming-bastille/wiki">Read the Wiki</a>
+  </div>
+</div>
+
+<div class="stats-strip">
+  <div class="stats-inner">
+    <div class="stat"><div class="stat-num">5</div><div class="stat-label">Specialist AI agents</div></div>
+    <div class="stat"><div class="stat-num">&lt;2s</div><div class="stat-label">Time to first graph nodes</div></div>
+    <div class="stat"><div class="stat-num">4</div><div class="stat-label">Orchestration phases</div></div>
+    <div class="stat"><div class="stat-num">5</div><div class="stat-label">Causal edge types</div></div>
+    <div class="stat"><div class="stat-num">SSE</div><div class="stat-label">Real-time streaming</div></div>
+  </div>
+</div>
+
+<section>
+  <div class="section-inner">
+    <div class="section-label">The Idea</div>
+    <div class="section-title">History isn't linear. Your tools should reflect that.</div>
+    <div style="height:1rem;"></div>
+    <div class="pull-quote">
+      <p>
+        You ask "What led to the French Revolution?" and within seconds Storming Bastille starts building a structured causal map:
+        a streamed narrative backed by live web research, an interactive graph of connected events with confidence-weighted edges,
+        a zoomable D3 timeline, and source citations ranked by reliability. Five AI agents coordinate behind the scenes, each doing one job well.
+        The result is a session you can explore, edit, name, and revisit &mdash; not a paragraph you copy and paste.
+      </p>
+    </div>
   </div>
 </section>
 
-<hr class="divider" />
-
-<!-- WHAT IT DOES -->
-<section class="what-it-does">
-  <div class="section-label">The idea</div>
-  <h2 class="section-title">History isn't linear. Your tools should reflect that.</h2>
-  <p>
-    You ask a question — "What led to the French Revolution?" — and within seconds Storming Bastille starts building a structured causal map: a streamed narrative backed by live web research, an interactive graph of connected events with confidence-weighted edges, a zoomable timeline, and source citations ranked by reliability. Five AI agents coordinate behind the scenes, each doing one job well. The result is a session you can explore, edit, name, and revisit — not a paragraph you copy and paste.
-  </p>
-</section>
-
-<hr class="divider" />
-
-<!-- FEATURES -->
-<section id="features">
-  <div class="section-label">Features</div>
-  <h2 class="section-title">Everything you need to understand causation</h2>
-  <p class="section-desc">Built around a single idea: causal relationships between events matter more than chronological facts.</p>
-
-  <div class="feature-grid">
-
-    <div class="feature-card">
-      <div class="feature-icon" style="background: rgba(139,92,246,0.15); color: #a78bfa;">◈</div>
-      <h3>Interactive Causal Graph</h3>
-      <p>React Flow canvas with custom nodes and edges. Five relationship types — direct cause, contributing factor, enabling condition, consequence, feedback loop — each with a confidence score. Drag, edit, and export to PNG.</p>
-    </div>
-
-    <div class="feature-card">
-      <div class="feature-icon" style="background: rgba(88,166,255,0.12); color: #58a6ff;">⟳</div>
-      <h3>Real-time Streaming</h3>
-      <p>Narrative text streams token by token via SSE. Graph nodes appear within 2 seconds. Causal edges arrive as a second pass. You watch the analysis build itself — never stare at a spinner.</p>
-    </div>
-
-    <div class="feature-card">
-      <div class="feature-icon" style="background: rgba(63,185,80,0.12); color: #3fb950;">✓</div>
-      <h3>Verified Source Citations</h3>
-      <p>A dedicated SourceVerifier agent cross-checks claims against scraped web sources and assigns reliability tiers: Academic, Encyclopedia, News, Web, Blog. Citations appear in a ranked panel.</p>
-    </div>
-
-    <div class="feature-card">
-      <div class="feature-icon" style="background: rgba(210,153,34,0.12); color: #d29922;">◷</div>
-      <h3>D3 Zoomable Timeline</h3>
-      <p>Events plotted chronologically on a D3 SVG timeline. Zoomable, pannable, and linked to the graph — click a timeline event to highlight its node.</p>
-    </div>
-
-    <div class="feature-card">
-      <div class="feature-icon" style="background: rgba(57,211,83,0.08); color: #39d353;">⊞</div>
-      <h3>Session Memory</h3>
-      <p>Name and save any analysis. Sessions persist server-side with SQLite + GCS backup. Pick up where you left off, run follow-up queries that build on prior context.</p>
-    </div>
-
-    <div class="feature-card">
-      <div class="feature-icon" style="background: rgba(139,92,246,0.15); color: #a78bfa;">⬡</div>
-      <h3>Multi-agent AI Pipeline</h3>
-      <p>Five specialised agents: HistorianAgent (Claude Haiku), CausalAnalystAgent (Claude Sonnet), GraphBuilderAgent, SourceVerifierAgent, and FollowUpAgent. Each optimised for its task.</p>
-    </div>
-
-  </div>
-</section>
-
-<hr class="divider" />
-
-<!-- HOW IT WORKS -->
-<section id="how-it-works">
-  <div class="section-label">Under the hood</div>
-  <h2 class="section-title">4-phase orchestration</h2>
-  <p class="section-desc">Designed to minimise time-to-first-pixel. Something meaningful is on screen within 2 seconds of submitting a query.</p>
-
-  <div class="pipeline">
-
-    <div class="pipeline-step">
-      <div class="step-num">1</div>
-      <div class="step-content">
-        <span class="step-tag" style="background: rgba(88,166,255,0.12); color: #58a6ff; border: 1px solid rgba(88,166,255,0.3);">Parallel · ~1–2s first token</span>
-        <h3>Research &amp; Narrative</h3>
-        <p>DuckDuckGo and Bing are queried simultaneously. Results are injected as plain text into the HistorianAgent prompt — not via Claude tool-use, to avoid latency overhead. HistorianAgent (Claude Haiku 4.5) streams the narrative and embeds 8–10 structured events as JSON.</p>
+<section id="features" style="background: var(--bg-subtle);">
+  <div class="section-inner">
+    <div class="section-label">Features</div>
+    <div class="section-title">Everything you need to understand causation</div>
+    <p class="section-subtitle">Built around a single idea: causal relationships between events matter more than chronological facts.</p>
+    <div class="card-grid">
+      <div class="card vi">
+        <div class="card-icon">&#9672;</div>
+        <h3>Interactive Causal Graph</h3>
+        <p>React Flow canvas with five relationship types &mdash; direct cause, contributing factor, enabling condition, consequence, feedback loop &mdash; each with a confidence score. Drag, edit, and export to PNG.</p>
+      </div>
+      <div class="card in">
+        <div class="card-icon">&#8635;</div>
+        <h3>Real-time Streaming</h3>
+        <p>Narrative text streams token by token via SSE. Graph nodes appear within 2 seconds. Causal edges arrive as a second pass. You watch the analysis build itself &mdash; never stare at a spinner.</p>
+      </div>
+      <div class="card ro">
+        <div class="card-icon">&#10003;</div>
+        <h3>Verified Source Citations</h3>
+        <p>A dedicated SourceVerifier agent cross-checks claims and assigns reliability tiers: Academic, Encyclopedia, News, Web, Blog. Citations appear in a ranked panel alongside the graph.</p>
+      </div>
+      <div class="card am">
+        <div class="card-icon">&#9719;</div>
+        <h3>D3 Zoomable Timeline</h3>
+        <p>Events plotted chronologically on a D3 SVG timeline. Zoomable, pannable, and linked to the graph &mdash; click a timeline event to highlight its corresponding node.</p>
+      </div>
+      <div class="card te">
+        <div class="card-icon">&#8862;</div>
+        <h3>Session Memory</h3>
+        <p>Name and save any analysis. Sessions persist server-side with SQLite and automatic GCS backup. Pick up where you left off, or run follow-up queries that build on prior context.</p>
+      </div>
+      <div class="card sk">
+        <div class="card-icon">&#11041;</div>
+        <h3>Multi-agent Pipeline</h3>
+        <p>Five specialists: HistorianAgent (Haiku), CausalAnalystAgent (Sonnet), GraphBuilderAgent, SourceVerifierAgent, and FollowUpAgent. Each optimised for its precise task.</p>
       </div>
     </div>
-
-    <div class="pipeline-step">
-      <div class="step-num">2</div>
-      <div class="step-content">
-        <span class="step-tag" style="background: rgba(139,92,246,0.12); color: #a78bfa; border: 1px solid rgba(139,92,246,0.3);">Immediate · ~2s</span>
-        <h3>Graph Nodes</h3>
-        <p>GraphBuilderAgent converts the historian's structured events into React Flow nodes and Dagre-positioned timeline data. An SSE event fires — nodes appear on screen before any causal analysis begins. No AI call needed; this is pure deterministic transformation.</p>
-      </div>
-    </div>
-
-    <div class="pipeline-step">
-      <div class="step-num">3</div>
-      <div class="step-content">
-        <span class="step-tag" style="background: rgba(210,153,34,0.12); color: #d29922; border: 1px solid rgba(210,153,34,0.3);">Async · 5–15s</span>
-        <h3>Causal Analysis</h3>
-        <p>CausalAnalystAgent (Claude Sonnet) identifies relationships between events: type, confidence score (0.3–1.0), and explanation. A second SSE event fires with the edge set. The graph completes visually — edges appear between the existing nodes.</p>
-      </div>
-    </div>
-
-    <div class="pipeline-step">
-      <div class="step-num">4</div>
-      <div class="step-content">
-        <span class="step-tag" style="background: rgba(63,185,80,0.1); color: #3fb950; border: 1px solid rgba(63,185,80,0.25);">Fire-and-forget</span>
-        <h3>Source Verification &amp; Persistence</h3>
-        <p>SourceVerifierAgent cross-checks claims and assigns reliability tiers. Results are saved to SQLite with a GCS backup. This runs in the background — the user has everything they need before this phase completes.</p>
-      </div>
-    </div>
-
   </div>
 </section>
 
-<hr class="divider" />
-
-<!-- TECH STACK -->
-<section class="tech-section">
-  <div class="section-label">Technology</div>
-  <h2 class="section-title">Built on modern, production-grade tools</h2>
-
-  <div class="tech-group">
-    <div class="tech-group-label">Backend</div>
-    <div class="tech-badges">
-      <span class="badge badge-blue">Python 3.12</span>
-      <span class="badge badge-blue">FastAPI</span>
-      <span class="badge badge-blue">sse-starlette</span>
-      <span class="badge badge-blue">aiosqlite</span>
-      <span class="badge badge-blue">Anthropic SDK</span>
-      <span class="badge badge-blue">httpx</span>
-      <span class="badge badge-blue">BeautifulSoup4</span>
-      <span class="badge badge-blue">PyJWT · bcrypt</span>
-    </div>
-  </div>
-
-  <div class="tech-group">
-    <div class="tech-group-label">Frontend</div>
-    <div class="tech-badges">
-      <span class="badge badge-purple">Next.js 15.5</span>
-      <span class="badge badge-purple">React 19</span>
-      <span class="badge badge-purple">TypeScript</span>
-      <span class="badge badge-purple">TailwindCSS 4</span>
-      <span class="badge badge-purple">Zustand 5</span>
-      <span class="badge badge-purple">React Flow v12</span>
-      <span class="badge badge-purple">D3.js 7</span>
-      <span class="badge badge-purple">Framer Motion</span>
-    </div>
-  </div>
-
-  <div class="tech-group">
-    <div class="tech-group-label">AI Models</div>
-    <div class="tech-badges">
-      <span class="badge badge-orange">Claude Haiku 4.5</span>
-      <span class="badge badge-orange">Claude Sonnet</span>
-    </div>
-  </div>
-
-  <div class="tech-group">
-    <div class="tech-group-label">Infrastructure</div>
-    <div class="tech-badges">
-      <span class="badge badge-green">GCP Cloud Run</span>
-      <span class="badge badge-green">Artifact Registry</span>
-      <span class="badge badge-green">Secret Manager</span>
-      <span class="badge badge-green">Google Cloud Storage</span>
-      <span class="badge badge-green">Terraform</span>
-      <span class="badge badge-teal">GitHub Actions</span>
-      <span class="badge badge-teal">Docker</span>
-    </div>
-  </div>
-
-  <div class="tech-group">
-    <div class="tech-group-label">Security scanning</div>
-    <div class="tech-badges">
-      <span class="badge badge-teal">Bandit SAST</span>
-      <span class="badge badge-teal">pip-audit</span>
-      <span class="badge badge-teal">CodeQL</span>
-      <span class="badge badge-teal">Trivy</span>
+<section id="howitworks">
+  <div class="section-inner">
+    <div class="section-label">Under the Hood</div>
+    <div class="section-title">4-phase orchestration</div>
+    <p class="section-subtitle">Designed to minimise time-to-first-pixel. Something meaningful is on screen within 2 seconds of submitting a query.</p>
+    <div class="pipeline">
+      <div class="pipeline-step">
+        <div class="pipe-num p1">1</div>
+        <div class="pipe-body">
+          <span class="pipe-tag sky">Parallel &middot; ~1&ndash;2s first token</span>
+          <h3>Research &amp; Narrative</h3>
+          <p>DuckDuckGo and Bing are queried simultaneously. Results are injected as plain text into the HistorianAgent prompt &mdash; not via tool-use, to avoid latency overhead. HistorianAgent (Claude Haiku 4.5) streams the narrative and embeds 8&ndash;10 structured events as JSON.</p>
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipe-num p2">2</div>
+        <div class="pipe-body">
+          <span class="pipe-tag vi">Immediate &middot; ~2s</span>
+          <h3>Graph Nodes</h3>
+          <p>GraphBuilderAgent converts the historian's structured events into React Flow nodes and Dagre-positioned timeline data. An SSE event fires &mdash; nodes appear on screen before any causal analysis begins. No AI call needed; this is pure deterministic transformation.</p>
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipe-num p3">3</div>
+        <div class="pipe-body">
+          <span class="pipe-tag am">Async &middot; 5&ndash;15s</span>
+          <h3>Causal Analysis</h3>
+          <p>CausalAnalystAgent (Claude Sonnet) identifies relationships between events: type, confidence score (0.3&ndash;1.0), and explanation. A second SSE event fires with the edge set. The graph completes visually as edges appear between the existing nodes.</p>
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipe-num p4">4</div>
+        <div class="pipe-body">
+          <span class="pipe-tag te">Fire-and-forget</span>
+          <h3>Source Verification &amp; Persistence</h3>
+          <p>SourceVerifierAgent cross-checks claims and assigns reliability tiers. Results are saved to SQLite with a GCS backup. This runs in the background &mdash; the user has everything they need before this phase completes.</p>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<hr class="divider" />
-
-<!-- QUICKSTART -->
-<section id="quickstart" class="quickstart">
-  <div class="section-label">Quick start</div>
-  <h2 class="section-title">Running locally in under 5 minutes</h2>
-
-  <div class="code-block">
-    <div class="code-header">
-      <div class="code-dot" style="background: #f85149;"></div>
-      <div class="code-dot" style="background: #d29922;"></div>
-      <div class="code-dot" style="background: #3fb950;"></div>
-      <span class="code-title">bash</span>
+<section style="background: var(--bg-subtle);">
+  <div class="section-inner">
+    <div class="section-label">Technology</div>
+    <div class="section-title">Built on modern, production-grade tools</div>
+    <p class="section-subtitle" style="margin-bottom:2.5rem;">A carefully chosen stack with no unnecessary dependencies.</p>
+    <div class="stack-grid">
+      <div class="stack-group">
+        <h4>Backend</h4>
+        <div class="badge-list">
+          <span class="badge in">Python 3.12</span>
+          <span class="badge in">FastAPI</span>
+          <span class="badge in">sse-starlette</span>
+          <span class="badge in">aiosqlite</span>
+          <span class="badge in">Anthropic SDK</span>
+          <span class="badge in">httpx</span>
+          <span class="badge in">BeautifulSoup4</span>
+          <span class="badge in">PyJWT &amp; bcrypt</span>
+        </div>
+      </div>
+      <div class="stack-group">
+        <h4>Frontend</h4>
+        <div class="badge-list">
+          <span class="badge vi">Next.js 15.5</span>
+          <span class="badge vi">React 19</span>
+          <span class="badge vi">TypeScript</span>
+          <span class="badge vi">TailwindCSS 4</span>
+          <span class="badge vi">Zustand 5</span>
+          <span class="badge vi">React Flow v12</span>
+          <span class="badge vi">D3.js 7</span>
+          <span class="badge vi">Framer Motion</span>
+        </div>
+      </div>
+      <div class="stack-group">
+        <h4>AI Models</h4>
+        <div class="badge-list">
+          <span class="badge am">Claude Haiku 4.5</span>
+          <span class="badge am">Claude Sonnet</span>
+        </div>
+        <h4 style="margin-top:1.5rem;">Infrastructure</h4>
+        <div class="badge-list">
+          <span class="badge te">GCP Cloud Run</span>
+          <span class="badge te">Artifact Registry</span>
+          <span class="badge te">Secret Manager</span>
+          <span class="badge te">Cloud Storage</span>
+          <span class="badge te">Terraform</span>
+          <span class="badge te">GitHub Actions</span>
+          <span class="badge te">Docker</span>
+        </div>
+      </div>
+      <div class="stack-group">
+        <h4>Security Scanning</h4>
+        <div class="badge-list">
+          <span class="badge ro">Bandit SAST</span>
+          <span class="badge ro">pip-audit</span>
+          <span class="badge ro">CodeQL</span>
+          <span class="badge ro">Trivy</span>
+        </div>
+      </div>
     </div>
-    <pre><span class="c-comment"># Clone the repo</span>
-<span class="c-prompt">$ </span><span class="c-cmd">git clone</span> <span class="c-str">https://github.com/rupakc/storming-bastille.git</span>
-<span class="c-prompt">$ </span><span class="c-cmd">cd</span> storming-bastille
-
-<span class="c-comment"># Set your Anthropic API key</span>
-<span class="c-prompt">$ </span><span class="c-cmd">cp</span> backend/.env.example backend/.env
-<span class="c-prompt">$ </span><span class="c-cmd">echo</span> <span class="c-str">"ANTHROPIC_API_KEY=sk-ant-..."</span> >> backend/.env
-
-<span class="c-comment"># Start both backend and frontend</span>
-<span class="c-prompt">$ </span><span class="c-cmd">./start.sh</span>
-
-<span class="c-comment"># Open http://localhost:3000 — default login: admin / changeme</span></pre>
   </div>
-
-  <p style="margin-top: 1.25rem; font-size: 0.875rem; color: var(--text-muted);">
-    Prerequisites: Python 3.12+, <a href="https://docs.astral.sh/uv/" style="color: var(--accent-light);">uv</a>, <a href="https://bun.sh" style="color: var(--accent-light);">Bun</a>. Full setup instructions in the <a href="https://github.com/rupakc/storming-bastille/wiki/Setup-and-Installation" style="color: var(--accent-light);">Setup and Installation wiki page</a>.
-  </p>
 </section>
 
-<!-- FOOTER -->
+<section id="quickstart">
+  <div class="section-inner">
+    <div class="section-label">Quick Start</div>
+    <div class="section-title">Running locally in under 5 minutes</div>
+    <p class="section-subtitle">Prerequisites: Python 3.12+, <a href="https://docs.astral.sh/uv/">uv</a>, and <a href="https://bun.sh">Bun</a>.</p>
+    <div class="qs-steps">
+      <div class="qs-step">
+        <div class="qs-num">1</div>
+        <div class="qs-body"><h4>Clone the repository</h4><p>Pull the source code and enter the project directory.</p></div>
+      </div>
+      <div class="qs-step">
+        <div class="qs-num">2</div>
+        <div class="qs-body"><h4>Configure environment</h4><p>Copy the backend env file and set your Anthropic API key. That's the only required configuration to start.</p></div>
+      </div>
+      <div class="qs-step">
+        <div class="qs-num">3</div>
+        <div class="qs-body"><h4>Start the application</h4><p>The <code style="font-size:0.9em;">start.sh</code> script boots both backend and frontend. Default login: <code style="font-size:0.9em;">admin / changeme</code>.</p></div>
+      </div>
+    </div>
+    <pre><span class="cc"># 1. Clone</span>
+<span class="pr">$ </span><span class="cmd">git clone</span> <span class="url">https://github.com/rupakc/storming-bastille.git</span>
+<span class="pr">$ </span><span class="cmd">cd</span> storming-bastille
+
+<span class="cc"># 2. Configure</span>
+<span class="pr">$ </span><span class="cmd">cp</span> backend/.env.example backend/.env
+<span class="pr">$ </span><span class="cmd">echo</span> <span class="url">"ANTHROPIC_API_KEY=sk-ant-..."</span> >> backend/.env
+
+<span class="cc"># 3. Run</span>
+<span class="pr">$ </span><span class="cmd">./start.sh</span>
+
+<span class="cc"># Open → </span><span class="url">http://localhost:3000</span>  <span class="cc">(login: admin / changeme)</span></pre>
+    <p style="margin-top:1.25rem;color:var(--text-muted);font-size:0.9rem;">
+      Full setup instructions including GCP deployment in the
+      <a href="https://github.com/rupakc/storming-bastille/wiki/Setup-and-Installation">Setup and Installation wiki page</a>.
+    </p>
+  </div>
+</section>
+
+<div class="cta-strip">
+  <h2>Ready to map history's causes?</h2>
+  <p>Clone the repo, set your API key, and start exploring any historical question in seconds.</p>
+  <div class="hero-buttons">
+    <a class="btn btn-primary" href="https://github.com/rupakc/storming-bastille">&#9733; Star on GitHub</a>
+    <a class="btn btn-ghost" href="https://github.com/rupakc/storming-bastille/wiki">Full Documentation &rarr;</a>
+  </div>
+</div>
+
+<section>
+  <div class="section-inner">
+    <div class="section-label">Resources</div>
+    <div class="section-title">Where to go next</div>
+    <p class="section-subtitle">Everything you need to understand, extend, and deploy the project.</p>
+    <div class="links-grid">
+      <a class="link-card" href="https://github.com/rupakc/storming-bastille">
+        <span class="link-card-label">Source</span>
+        <span class="link-card-title">GitHub Repository</span>
+        <span class="link-card-desc">Browse the code, open issues, submit pull requests.</span>
+      </a>
+      <a class="link-card" href="https://github.com/rupakc/storming-bastille/wiki">
+        <span class="link-card-label">Documentation</span>
+        <span class="link-card-title">Project Wiki</span>
+        <span class="link-card-desc">Architecture, setup guide, API reference, deployment runbook.</span>
+      </a>
+      <a class="link-card" href="https://github.com/rupakc/storming-bastille/wiki/Agent-System">
+        <span class="link-card-label">Deep Dive</span>
+        <span class="link-card-title">Agent System</span>
+        <span class="link-card-desc">All five agents, their models, prompts, and coordination logic.</span>
+      </a>
+      <a class="link-card" href="https://github.com/rupakc/storming-bastille/wiki/API-Reference">
+        <span class="link-card-label">Reference</span>
+        <span class="link-card-title">API Reference</span>
+        <span class="link-card-desc">All REST endpoints, SSE event schema, request/response shapes.</span>
+      </a>
+      <a class="link-card" href="https://github.com/rupakc/storming-bastille/wiki/Deployment">
+        <span class="link-card-label">Ops</span>
+        <span class="link-card-title">Deployment Guide</span>
+        <span class="link-card-desc">GCP Cloud Run, Terraform modules, GitHub Actions CI/CD.</span>
+      </a>
+      <a class="link-card" href="https://github.com/rupakc/storming-bastille/issues">
+        <span class="link-card-label">Community</span>
+        <span class="link-card-title">Open an Issue</span>
+        <span class="link-card-desc">Report a bug, request a feature, or start a discussion.</span>
+      </a>
+    </div>
+  </div>
+</section>
+
 <footer>
+  <div class="footer-brand">
+    <span class="footer-brand-icon">&#x2694;</span>
+    Storming Bastille
+  </div>
   <div class="footer-links">
     <a href="https://github.com/rupakc/storming-bastille">GitHub</a>
     <a href="https://github.com/rupakc/storming-bastille/wiki">Wiki</a>
@@ -717,7 +656,7 @@
     <a href="https://github.com/rupakc/storming-bastille/wiki/Deployment">Deployment</a>
     <a href="https://github.com/rupakc/storming-bastille/issues">Issues</a>
   </div>
-  <p>Built with <a href="https://anthropic.com">Claude AI</a> &nbsp;·&nbsp; MIT License</p>
+  <p>Built with <a href="https://anthropic.com">Claude AI</a> &nbsp;&middot;&nbsp; MIT License</p>
 </footer>
 
 </body>
