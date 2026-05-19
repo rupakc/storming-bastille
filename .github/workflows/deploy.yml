@@ -1,0 +1,183 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: us-central1
+  APP_NAME: storming-bastille
+  # Artifact Registry repository root (image tags are appended in each job)
+  REGISTRY: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/storming-bastille
+
+jobs:
+  # ─── Job 1: Bootstrap ──────────────────────────────────────────────────────
+  # Idempotent: enables APIs, creates TF state bucket, AR repo, and upserts secrets.
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Enable required GCP APIs
+        run: |
+          gcloud services enable \
+            run.googleapis.com \
+            artifactregistry.googleapis.com \
+            secretmanager.googleapis.com \
+            storage.googleapis.com \
+            storage-component.googleapis.com \
+            iam.googleapis.com \
+            cloudresourcemanager.googleapis.com \
+            compute.googleapis.com \
+            monitoring.googleapis.com \
+            logging.googleapis.com \
+            --project="${PROJECT_ID}" --quiet
+
+      - name: Create Terraform state bucket (idempotent)
+        run: |
+          BUCKET="${PROJECT_ID}-tf-state"
+          if ! gcloud storage buckets describe "gs://$BUCKET" \
+               --project="${PROJECT_ID}" &>/dev/null; then
+            gcloud storage buckets create "gs://$BUCKET" \
+              --project="${PROJECT_ID}" \
+              --location="${REGION}" \
+              --uniform-bucket-level-access
+            gcloud storage buckets update "gs://$BUCKET" --versioning
+            echo "Created TF state bucket: gs://$BUCKET"
+          else
+            echo "TF state bucket already exists: gs://$BUCKET"
+          fi
+
+      - name: Create Artifact Registry repository (idempotent)
+        run: |
+          if ! gcloud artifacts repositories describe "${APP_NAME}" \
+               --location="${REGION}" \
+               --project="${PROJECT_ID}" &>/dev/null; then
+            gcloud artifacts repositories create "${APP_NAME}" \
+              --repository-format=docker \
+              --location="${REGION}" \
+              --project="${PROJECT_ID}"
+            echo "Created Artifact Registry repo: ${APP_NAME}"
+          else
+            echo "Artifact Registry repo already exists: ${APP_NAME}"
+          fi
+
+      - name: Upsert Secret Manager secrets
+        run: |
+          upsert_secret() {
+            local name="$1"
+            local value="$2"
+            if ! gcloud secrets describe "$name" --project="${PROJECT_ID}" &>/dev/null; then
+              gcloud secrets create "$name" \
+                --project="${PROJECT_ID}" \
+                --replication-policy=automatic
+            fi
+            echo -n "$value" | gcloud secrets versions add "$name" \
+              --data-file=- --project="${PROJECT_ID}"
+            echo "Upserted secret: $name"
+          }
+          upsert_secret "anthropic-api-key" "${{ secrets.ANTHROPIC_API_KEY }}"
+          upsert_secret "jwt-secret-key"    "${{ secrets.JWT_SECRET_KEY }}"
+          upsert_secret "admin-password"    "${{ secrets.ADMIN_PASSWORD }}"
+
+  # ─── Job 2: Build & push Docker images ────────────────────────────────────
+  push-images:
+    runs-on: ubuntu-latest
+    needs: bootstrap
+    outputs:
+      backend_image: ${{ steps.set-outputs.outputs.backend_image }}
+      frontend_image: ${{ steps.set-outputs.outputs.frontend_image }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+
+      - name: Build and push backend image
+        run: |
+          docker build \
+            --tag "${REGISTRY}/backend:${{ github.sha }}" \
+            --tag "${REGISTRY}/backend:latest" \
+            ./backend
+          docker push "${REGISTRY}/backend:${{ github.sha }}"
+          docker push "${REGISTRY}/backend:latest"
+
+      - name: Build and push frontend image
+        run: |
+          docker build \
+            --tag "${REGISTRY}/frontend:${{ github.sha }}" \
+            --tag "${REGISTRY}/frontend:latest" \
+            ./frontend
+          docker push "${REGISTRY}/frontend:${{ github.sha }}"
+          docker push "${REGISTRY}/frontend:latest"
+
+      - name: Set image outputs
+        id: set-outputs
+        run: |
+          echo "backend_image=${REGISTRY}/backend:${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "frontend_image=${REGISTRY}/frontend:${{ github.sha }}" >> $GITHUB_OUTPUT
+
+  # ─── Job 3: Terraform apply ────────────────────────────────────────────────
+  terraform:
+    runs-on: ubuntu-latest
+    needs: push-images
+    env:
+      TF_VAR_project_id:     ${{ secrets.GCP_PROJECT_ID }}
+      TF_VAR_region:         us-central1
+      TF_VAR_app_name:       storming-bastille
+      TF_VAR_alert_email:    ${{ secrets.ALERT_EMAIL }}
+      TF_VAR_backend_image:  ${{ needs.push-images.outputs.backend_image }}
+      TF_VAR_frontend_image: ${{ needs.push-images.outputs.frontend_image }}
+      TF_VAR_tf_state_bucket: ${{ secrets.GCP_PROJECT_ID }}-tf-state
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7"
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.GCP_PROJECT_ID }}-tf-state" \
+            -backend-config="prefix=terraform/state"
+        working-directory: infrastructure/terraform
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: infrastructure/terraform
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+        working-directory: infrastructure/terraform
+
+      - name: Terraform Apply
+        run: terraform apply tfplan
+        working-directory: infrastructure/terraform
+
+      - name: Show deployment URLs
+        run: |
+          echo ""
+          echo "=== Deployment complete ==="
+          echo "Frontend:  $(terraform output -raw frontend_url)"
+          echo "Backend:   $(terraform output -raw backend_url)"
+          echo "Registry:  $(terraform output -raw artifact_registry_url)"
+        working-directory: infrastructure/terraform

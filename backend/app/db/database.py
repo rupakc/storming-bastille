@@ -57,10 +57,27 @@ class AsyncSQLiteDatabase:
             logger.warning("Migrations directory not found at %s", migrations_dir)
             return
 
+        # Create a schema_migrations tracking table so each file runs exactly once
+        await self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS schema_migrations (
+                filename TEXT PRIMARY KEY,
+                applied_at TEXT DEFAULT (datetime('now'))
+            )
+        """)
+        await self.conn.commit()
+
         migration_files = sorted(migrations_dir.glob("*.sql"))
         for mf in migration_files:
+            row = await (await self.conn.execute(
+                "SELECT 1 FROM schema_migrations WHERE filename = ?", (mf.name,)
+            )).fetchone()
+            if row:
+                continue  # already applied
             logger.info("Running migration: %s", mf.name)
             sql = mf.read_text()
             await self.conn.executescript(sql)
-        await self.conn.commit()
+            await self.conn.execute(
+                "INSERT INTO schema_migrations (filename) VALUES (?)", (mf.name,)
+            )
+            await self.conn.commit()
         logger.info("All migrations applied")

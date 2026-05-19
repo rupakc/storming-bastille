@@ -1,3 +1,4 @@
+import { getAuthHeaders } from "./api";
 import type {
   QueryRequest,
   SessionEvent,
@@ -39,7 +40,10 @@ export function streamQuery(
 
       const res = await fetch(`${baseUrl}/api/query`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
         body: JSON.stringify(request),
         signal: controller.signal,
       });

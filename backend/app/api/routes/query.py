@@ -1,10 +1,11 @@
 import json
 import logging
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 from sse_starlette.sse import EventSourceResponse
 
 from app.agents.orchestrator import QueryOrchestrator
+from app.core.auth import get_current_user
 from app.schemas.query import QueryRequest
 
 logger = logging.getLogger(__name__)
@@ -12,7 +13,11 @@ router = APIRouter()
 
 
 @router.post("/api/query")
-async def execute_query(request: Request, body: QueryRequest):
+async def execute_query(
+    request: Request,
+    body: QueryRequest,
+    current_user: dict = Depends(get_current_user),
+):
     db = request.app.state.db
     orchestrator = QueryOrchestrator(db)
 

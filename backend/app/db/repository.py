@@ -20,17 +20,27 @@ class SessionRepository:
     def __init__(self, db: AsyncSQLiteDatabase):
         self.db = db
 
-    async def create_session(self, title: str) -> Session:
+    async def create_session(self, title: str, user_id: str | None = None) -> Session:
         session_id = _uuid()
         now = _now()
         await self.db.execute(
-            "INSERT INTO sessions (id, title, created_at, updated_at) VALUES (?, ?, ?, ?)",
-            (session_id, title, now, now),
+            "INSERT INTO sessions (id, title, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+            (session_id, title, user_id, now, now),
         )
         return Session(id=session_id, title=title, created_at=now, updated_at=now, queries=[])
 
-    async def get_session(self, session_id: str) -> Session | None:
-        row = await self.db.fetchone("SELECT * FROM sessions WHERE id = ?", (session_id,))
+    async def get_session(
+        self, session_id: str, user_id: str | None = None
+    ) -> Session | None:
+        if user_id is not None:
+            row = await self.db.fetchone(
+                "SELECT * FROM sessions WHERE id = ? AND user_id = ?",
+                (session_id, user_id),
+            )
+        else:
+            row = await self.db.fetchone(
+                "SELECT * FROM sessions WHERE id = ?", (session_id,)
+            )
         if row is None:
             return None
 
@@ -70,15 +80,27 @@ class SessionRepository:
             queries=queries,
         )
 
-    async def list_sessions(self) -> list[SessionSummary]:
-        rows = await self.db.fetchall(
-            """
-            SELECT s.id, s.title, s.created_at,
-                   (SELECT COUNT(*) FROM queries q WHERE q.session_id = s.id) AS query_count
-            FROM sessions s
-            ORDER BY s.updated_at DESC
-            """
-        )
+    async def list_sessions(self, user_id: str | None = None) -> list[SessionSummary]:
+        if user_id is not None:
+            rows = await self.db.fetchall(
+                """
+                SELECT s.id, s.title, s.created_at,
+                       (SELECT COUNT(*) FROM queries q WHERE q.session_id = s.id) AS query_count
+                FROM sessions s
+                WHERE s.user_id = ?
+                ORDER BY s.updated_at DESC
+                """,
+                (user_id,),
+            )
+        else:
+            rows = await self.db.fetchall(
+                """
+                SELECT s.id, s.title, s.created_at,
+                       (SELECT COUNT(*) FROM queries q WHERE q.session_id = s.id) AS query_count
+                FROM sessions s
+                ORDER BY s.updated_at DESC
+                """
+            )
         return [
             SessionSummary(
                 id=r["id"], title=r["title"], created_at=r["created_at"], query_count=r["query_count"]

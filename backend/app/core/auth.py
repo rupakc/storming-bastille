@@ -1,49 +1,75 @@
-"""Simple JWT authentication for Storming Bastille."""
+"""JWT authentication utilities and FastAPI dependency injectors."""
 
-import time
+from datetime import UTC, datetime, timedelta
 
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.core.config import settings
 
-USERS = {
-    "history": {"password": "bastille@123", "name": "History"},
-}
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_HOURS = 24
+MIN_PASSWORD_LENGTH = 8
 
 _bearer = HTTPBearer(auto_error=False)
 
 
-def authenticate_user(username: str, password: str) -> dict | None:
-    user = USERS.get(username)
-    if user and user["password"] == password:
-        return {"username": username, "name": user["name"]}
-    return None
+def _secret() -> str:
+    return settings.jwt_secret_key
 
 
-def create_token(username: str) -> str:
-    payload = {"sub": username, "exp": int(time.time()) + 86400 * 7}
-    return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
+def create_access_token(data: dict) -> str:
+    """Create a JWT. Pass at minimum {"sub": username}; extra claims are included."""
+    payload = {
+        **data,
+        "exp": datetime.now(UTC) + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS),
+    }
+    return jwt.encode(payload, _secret(), algorithm=ALGORITHM)
 
 
-def verify_token(token: str) -> dict | None:
+def decode_token(token: str) -> dict:
+    """Decode and return JWT payload, or raise HTTPException 401."""
     try:
-        payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
-        username = payload.get("sub")
-        if username and username in USERS:
-            return {"username": username, "name": USERS[username]["name"]}
-    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
-        pass
-    return None
+        return jwt.decode(token, _secret(), algorithms=[ALGORITHM])
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
 
-async def get_current_user(
+def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
 ) -> dict:
+    """Validate JWT and return user row from DB. Raises 401 if missing/invalid/inactive."""
     if not credentials:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
-    user = verify_token(credentials.credentials)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    payload = decode_token(credentials.credentials)
+    username: str = payload.get("sub", "")
+    from app.db.users_db import get_user_by_username
+
+    user = get_user_by_username(username)
+    if not user or not user.get("is_active"):
+        raise HTTPException(status_code=401, detail="User not found or inactive")
+    return user
+
+
+def get_optional_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
+) -> dict | None:
+    """Like get_current_user but returns None instead of raising 401."""
+    if not credentials:
+        return None
+    try:
+        payload = jwt.decode(credentials.credentials, _secret(), algorithms=[ALGORITHM])
+        username = payload.get("sub", "")
+        from app.db.users_db import get_user_by_username
+
+        return get_user_by_username(username)
+    except jwt.PyJWTError:
+        return None
+
+
+def require_admin(user: dict = Depends(get_current_user)) -> dict:
+    """Dependency that ensures the current user is an admin."""
+    if not user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin access required")
     return user

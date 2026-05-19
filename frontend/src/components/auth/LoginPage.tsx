@@ -1,23 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Landmark, Lock, User, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 
 export function LoginPage() {
-  const { login } = useAuth();
+  const { login, isAuthenticated, requiresPasswordChange } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Redirect after successful auth state change
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (requiresPasswordChange) {
+      router.replace("/change-password");
+    } else {
+      const from = searchParams.get("from") || "/";
+      router.replace(from);
+    }
+  }, [isAuthenticated, requiresPasswordChange, router, searchParams]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      await login(username, password);
+      const user = await login(username, password);
+      if (user.requires_password_change) {
+        router.replace("/change-password");
+      } else {
+        const from = searchParams.get("from") || "/";
+        router.replace(from);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {

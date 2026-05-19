@@ -135,7 +135,7 @@ export function CausalGraph({
         onNodeClick={handleNodeClick as any}
         onEdgeClick={handleEdgeClick as any}
         onPaneClick={handlePaneClick}
-        onInit={handleInit}
+        onInit={handleInit as any}
         fitView
         fitViewOptions={{ padding: 0.05, duration: 400, maxZoom: 1.3 }}
         minZoom={0.15}

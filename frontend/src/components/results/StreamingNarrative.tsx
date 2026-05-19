@@ -26,7 +26,7 @@ export function StreamingNarrative({
 }: StreamingNarrativeProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [renderedContent, setRenderedContent] = useState("");
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const cleanContent = useMemo(() => stripJsonBlock(content), [content]);
 

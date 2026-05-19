@@ -8,10 +8,22 @@ import type {
 } from "./types";
 
 const BASE = "/api";
+const TOKEN_KEY = "sb_token";
+
+/** Returns auth headers if a token is stored, or an empty object. */
+export function getAuthHeaders(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  const token = localStorage.getItem(TOKEN_KEY);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+      ...(init?.headers as Record<string, string> | undefined),
+    },
     ...init,
   });
   if (!res.ok) {
@@ -22,7 +34,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export async function fetchPresets(): Promise<PresetPrompt[]> {
-  return request<PresetPrompt[]>("/presets");
+  // Backend returns { presets: [...] }
+  const res = await request<{ presets: PresetPrompt[] }>("/presets");
+  return res.presets ?? [];
 }
 
 export async function fetchSessions(): Promise<SessionSummary[]> {
@@ -44,17 +58,21 @@ export async function saveSession(
 }
 
 export async function deleteSession(id: string): Promise<void> {
-  await fetch(`${BASE}/sessions/${id}`, { method: "DELETE" });
+  await fetch(`${BASE}/sessions/${id}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
 }
 
 export async function saveGraph(
   sessionId: string,
   nodes: GraphNode[],
   edges: GraphEdge[],
-  timeline?: TimelineEvent[]
+  timeline?: TimelineEvent[],
+  queryId?: string
 ): Promise<void> {
   await request(`/sessions/${sessionId}/graph`, {
     method: "PATCH",
-    body: JSON.stringify({ nodes, edges, timeline }),
+    body: JSON.stringify({ nodes, edges, timeline: timeline ?? [], query_id: queryId }),
   });
 }

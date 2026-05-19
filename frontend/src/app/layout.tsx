@@ -48,6 +48,9 @@ export default function RootLayout({
           <AuthProvider>
             <AuthGate>
               <QueryProvider>
+                {/* Navigation is only shown for authenticated users (AuthGate
+                    renders LoginPage / redirect for unauthenticated users, so
+                    Navigation always has a valid user in context here). */}
                 <Navigation />
                 <main>{children}</main>
               </QueryProvider>

@@ -6,9 +6,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import auth, health, presets, query, sessions
+from app.api.routes.admin import router as admin_router
 from app.core.anthropic_client import close_client
 from app.core.config import settings
 from app.db.database import AsyncSQLiteDatabase
+from app.db.users_db import create_users_table, seed_admin
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level.upper(), logging.INFO),
@@ -19,6 +21,10 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Users DB must be initialised before the session DB so auth deps work
+    create_users_table()
+    seed_admin()
+
     db = AsyncSQLiteDatabase(settings.database_path)
     await db.connect()
     app.state.db = db
@@ -44,11 +50,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router)
+# Public routes first
 app.include_router(health.router)
+app.include_router(presets.router)
+
+# Auth routes (login is public, me/change-password require token)
+app.include_router(auth.router)
+
+# Protected routes
+app.include_router(admin_router)
 app.include_router(query.router)
 app.include_router(sessions.router)
-app.include_router(presets.router)
 
 
 def run():
