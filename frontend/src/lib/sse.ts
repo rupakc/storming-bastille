@@ -33,12 +33,7 @@ export function streamQuery(
 
   (async () => {
     try {
-      // Call backend directly to avoid Next.js proxy buffering SSE chunks
-      const baseUrl = typeof window !== "undefined"
-        ? `${window.location.protocol}//${window.location.hostname}:8000`
-        : "http://localhost:8000";
-
-      const res = await fetch(`${baseUrl}/api/query`, {
+      const res = await fetch(`/api/query`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
