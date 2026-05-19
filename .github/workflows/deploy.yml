@@ -137,6 +137,21 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: "__NEXT_PUBLIC_API_URL__"
 
+      # ── Ensure AR repo exists (bootstrap is idempotent; this guards against
+      #    Terraform state drift that could remove the repo between runs)
+      - name: Ensure Artifact Registry repository exists
+        run: |
+          if ! gcloud artifacts repositories describe "${APP_NAME}" \
+               --location="${REGION}" --project="${PROJECT_ID}" &>/dev/null; then
+            gcloud artifacts repositories create "${APP_NAME}" \
+              --repository-format=docker \
+              --location="${REGION}" \
+              --project="${PROJECT_ID}"
+            echo "Re-created AR repo: ${APP_NAME}"
+          else
+            echo "AR repo exists: ${APP_NAME}"
+          fi
+
       # ── Push images ───────────────────────────────────────────────────────
       - name: Push backend image
         run: |
