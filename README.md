@@ -8,6 +8,17 @@ An AI-powered web application that uncovers causal relationships in history. Ask
 
 ---
 
+## Live Demo
+
+| | URL |
+|---|---|
+| **Frontend** | https://storming-bastille-frontend-2hrxgxqboa-uc.a.run.app |
+| **Backend API** | https://storming-bastille-backend-2hrxgxqboa-uc.a.run.app/docs |
+
+> Hosted on Google Cloud Run (us-central1). Cold starts may add 2–3 seconds on first request.
+
+---
+
 ## Features
 
 - **Streaming AI narratives** — Claude streams the response word-by-word via SSE so you see results in seconds
