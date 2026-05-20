@@ -353,7 +353,7 @@ jobs:
       # even if backend has findings. exit-code: "0" so CI is not blocked
       # by scan findings — results appear in GitHub Security tab only.
       - name: Scan backend image
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         continue-on-error: true
         with:
           image-ref: scan-backend:ci
@@ -365,7 +365,7 @@ jobs:
           exit-code: "0"
 
       - name: Scan frontend image
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         continue-on-error: true
         with:
           image-ref: scan-frontend:ci
