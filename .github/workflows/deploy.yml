@@ -202,17 +202,32 @@ jobs:
         with:
           terraform_version: "1.7"
 
-      - name: Clear stale Terraform state lock
-        run: |
-          gsutil rm -f "gs://${{ secrets.GCP_PROJECT_ID }}-tf-state/terraform/storming-bastille/default.tflock" || true
-        continue-on-error: true
-
       - name: Terraform Init
         run: |
           terraform init \
             -backend-config="bucket=${{ secrets.GCP_PROJECT_ID }}-tf-state" \
             -backend-config="prefix=terraform/storming-bastille"
         working-directory: infrastructure/terraform
+
+      - name: Force unlock stale Terraform state lock
+        run: |
+          LOCK_DATA=$(gsutil cat \
+            "gs://${{ secrets.GCP_PROJECT_ID }}-tf-state/terraform/storming-bastille/default.tflock" 2>/dev/null \
+            || echo "")
+          if [ -n "$LOCK_DATA" ]; then
+            LOCK_ID=$(echo "$LOCK_DATA" | \
+              python3 -c "import sys,json; print(json.load(sys.stdin).get('ID',''))" 2>/dev/null \
+              || echo "")
+            if [ -n "$LOCK_ID" ]; then
+              echo "Stale lock found (ID=$LOCK_ID) — force-unlocking..."
+              terraform force-unlock -force "$LOCK_ID"
+              echo "Force unlock succeeded"
+            fi
+          else
+            echo "No stale lock found"
+          fi
+        working-directory: infrastructure/terraform
+        continue-on-error: true
 
       - name: Terraform Validate
         run: terraform validate
