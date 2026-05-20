@@ -191,6 +191,25 @@ class SessionRepository:
             "timeline": json.loads(graph_row["timeline"]),
         }
 
+    async def claim_session_by_query(
+        self, query_id: str, title: str, user_id: str
+    ) -> Session | None:
+        """Find the session that owns query_id, set its title and user_id, and return it.
+        Used by SaveDialog so that the auto-created (user_id=NULL) session with real content
+        becomes visible to the authenticated user instead of creating an empty duplicate."""
+        row = await self.db.fetchone(
+            "SELECT session_id FROM queries WHERE id = ?", (query_id,)
+        )
+        if row is None:
+            return None
+        session_id = row["session_id"]
+        now = _now()
+        await self.db.execute(
+            "UPDATE sessions SET title = ?, user_id = ?, updated_at = ? WHERE id = ?",
+            (title, user_id, now, session_id),
+        )
+        return await self.get_session(session_id)
+
     async def get_session_context(self, session_id: str) -> list[dict]:
         rows = await self.db.fetchall(
             "SELECT query_text, narrative FROM queries WHERE session_id = ? ORDER BY sequence",

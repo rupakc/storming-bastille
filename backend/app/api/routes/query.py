@@ -23,7 +23,7 @@ async def execute_query(
 
     async def event_generator():
         try:
-            async for event in orchestrator.execute_query(body):
+            async for event in orchestrator.execute_query(body, user_id=current_user["id"]):
                 yield {
                     "event": event["event"],
                     "data": json.dumps(event["data"]),

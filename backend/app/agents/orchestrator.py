@@ -25,14 +25,20 @@ class QueryOrchestrator:
         self.followup = FollowUpAgent()
         self.source_verifier = SourceVerifierAgent()
 
-    async def execute_query(self, request: QueryRequest) -> AsyncGenerator[dict, None]:
+    async def execute_query(
+        self, request: QueryRequest, user_id: str | None = None
+    ) -> AsyncGenerator[dict, None]:
         # Phase 0: Setup session (fast — just DB inserts)
         if request.session_id:
             session = await self.repo.get_session(request.session_id)
             if session is None:
-                session = await self.repo.create_session(title=request.query[:80])
+                session = await self.repo.create_session(
+                    title=request.query[:80], user_id=user_id
+                )
         else:
-            session = await self.repo.create_session(title=request.query[:80])
+            session = await self.repo.create_session(
+                title=request.query[:80], user_id=user_id
+            )
 
         sequence = len(session.queries) + 1
         query_record = await self.repo.save_query(session.id, request.query, sequence)
