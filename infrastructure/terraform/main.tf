@@ -87,6 +87,15 @@ resource "google_project_iam_member" "compute_sa_storage_admin" {
   depends_on = [google_project_service.apis]
 }
 
+# Human admin owner — only created when admin_email is provided
+resource "google_project_iam_member" "admin_owner" {
+  count      = var.admin_email != "" ? 1 : 0
+  project    = var.project_id
+  role       = "roles/owner"
+  member     = "user:${var.admin_email}"
+  depends_on = [google_project_service.apis]
+}
+
 # ─── Modules ──────────────────────────────────────────────────────────────────
 
 module "artifact_registry" {

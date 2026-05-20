@@ -32,6 +32,21 @@ resource "google_cloud_run_v2_service" "frontend" {
         }
       }
 
+      startup_probe {
+        http_get { path = "/" }
+        initial_delay_seconds = 10
+        period_seconds        = 5
+        failure_threshold     = 12
+        timeout_seconds       = 5
+      }
+
+      liveness_probe {
+        http_get { path = "/" }
+        period_seconds    = 30
+        failure_threshold = 3
+        timeout_seconds   = 5
+      }
+
       # The Next.js rewrite rules read this at build time (next.config.ts)
       # and at startup for SSR proxy targets.
       env {

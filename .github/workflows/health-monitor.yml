@@ -1,0 +1,54 @@
+name: Health Monitor
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # every 15 minutes
+  workflow_dispatch: {}      # allow manual trigger
+
+concurrency:
+  group: health-monitor
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: write   # needed to dispatch deploy.yml
+
+jobs:
+  check:
+    name: Backend Health Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health check (3 retries, 2-min apart)
+        id: hc
+        run: |
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt / 3..."
+            code=$(curl -sf -o /tmp/health.json -w "%{http_code}" \
+                   --max-time 15 "${{ secrets.BACKEND_URL }}/health" 2>/dev/null || echo "000")
+            echo "HTTP $code"
+            if [ "$code" = "200" ]; then
+              echo "healthy=true" >> "$GITHUB_OUTPUT"
+              echo "Backend is healthy."
+              exit 0
+            fi
+            [ "$attempt" -lt 3 ] && sleep 120
+          done
+          echo "healthy=false" >> "$GITHUB_OUTPUT"
+          echo "Backend failed all 3 health checks."
+
+      - name: Trigger redeploy
+        if: steps.hc.outputs.healthy == 'false'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'deploy.yml',
+              ref: 'main'
+            })
+            await core.summary
+              .addHeading('Auto-redeploy triggered', 3)
+              .addRaw('Backend failed 3 consecutive health checks. Redeployment dispatched.')
+              .write()

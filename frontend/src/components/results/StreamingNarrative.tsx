@@ -70,7 +70,7 @@ export function StreamingNarrative({
   return (
     <div
       ref={scrollRef}
-      className="flex-1 overflow-y-auto px-6 py-4 scroll-smooth"
+      className="flex-1 overflow-y-auto px-3 sm:px-6 py-3 sm:py-4 scroll-smooth"
     >
       <div
         className={cn(

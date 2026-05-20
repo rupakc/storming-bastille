@@ -102,10 +102,10 @@ export function GraphControls({
   }, [getNodes]);
 
   const btnClass =
-    "p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-colors shadow-sm";
+    "p-2.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-colors shadow-sm";
 
   return (
-    <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5">
+    <div className="absolute bottom-4 right-3 sm:top-3 sm:bottom-auto z-10 flex flex-col gap-1.5">
       <button onClick={() => zoomIn()} className={btnClass} title="Zoom in">
         <ZoomIn size={16} />
       </button>

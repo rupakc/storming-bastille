@@ -112,21 +112,21 @@ export default function SessionDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Graph + Timeline */}
           <div className="lg:col-span-3 space-y-4">
-            <div className="h-[450px] rounded-xl border border-[var(--border-subtle)] overflow-hidden bg-[var(--bg-secondary)]">
+            <div className="h-[260px] sm:h-[350px] lg:h-[450px] rounded-xl border border-[var(--border-subtle)] overflow-hidden bg-[var(--bg-secondary)]">
               <CausalGraph
                 graphNodes={activeQuery.graph?.nodes}
                 graphEdges={activeQuery.graph?.edges}
               />
             </div>
             {activeQuery.timeline && activeQuery.timeline.length > 0 && (
-              <div className="h-[140px] rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-2">
+              <div className="h-[180px] md:h-[140px] rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-2">
                 <Timeline events={activeQuery.timeline} />
               </div>
             )}
           </div>
 
           {/* Narrative + Sources */}
-          <div className="lg:col-span-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] overflow-hidden flex flex-col max-h-[650px]">
+          <div className="lg:col-span-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] overflow-hidden flex flex-col max-h-[400px] sm:max-h-[550px] lg:max-h-[650px]">
             <StreamingNarrative
               content={activeQuery.narrative}
               isStreaming={false}

@@ -3,6 +3,7 @@ name: Deploy
 on:
   push:
     branches: [main]
+  workflow_dispatch: {}   # allow health-monitor to trigger a redeploy
 
 # Only one deploy runs at a time. New pushes cancel any in-progress run
 # so we never have two Terraform processes competing for the state lock.
@@ -185,6 +186,7 @@ jobs:
       TF_VAR_region:          us-central1
       TF_VAR_app_name:        storming-bastille
       TF_VAR_alert_email:     ${{ secrets.ALERT_EMAIL }}
+      TF_VAR_admin_email:     ${{ secrets.ADMIN_EMAIL }}
       TF_VAR_backend_image:   us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/storming-bastille/backend:${{ github.sha }}
       TF_VAR_frontend_image:  us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/storming-bastille/frontend:${{ github.sha }}
       TF_VAR_tf_state_bucket: ${{ secrets.GCP_PROJECT_ID }}-tf-state

@@ -4,6 +4,7 @@ import { useRef, useEffect, useState, useMemo } from "react";
 import * as d3 from "d3";
 import { motion } from "motion/react";
 import { TimelineEventDot } from "./TimelineEvent";
+import { cn, categoryColor, formatDate } from "@/lib/utils";
 import type { TimelineEvent } from "@/lib/types";
 
 interface TimelineProps {
@@ -83,60 +84,84 @@ export function Timeline({ events, onEventClick }: TimelineProps) {
   if (!scale) return null;
 
   return (
-    <div
-      ref={scrollRef}
-      className="relative w-full h-full overflow-x-auto overflow-y-visible scrollbar-thin"
-    >
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4 }}
-        className="relative h-full"
-        style={{ width: contentWidth, minWidth: "100%" }}
-      >
-        {/* Timeline axis line */}
-        <div
-          className="absolute top-8 h-px bg-[var(--border-color)]"
-          style={{ left: 40, width: contentWidth - 80 }}
-        />
-
-        {/* Tick marks */}
-        {scale.ticks(Math.max(6, Math.floor(contentWidth / 120))).map((tick, i) => (
-          <div
-            key={i}
-            className="absolute top-6 flex flex-col items-center"
-            style={{ left: scale(tick) }}
-          >
-            <div className="w-px h-4 bg-[var(--border-color)]" />
-            <span className="text-[8px] text-[var(--text-muted)] mt-0.5 whitespace-nowrap">
-              {d3.timeFormat(
-                tick.getMonth() === 0 && tick.getDate() === 1
-                  ? "%Y"
-                  : "%b %Y"
-              )(tick)}
-            </span>
-          </div>
-        ))}
-
-        {/* Events — dots only, 3-row stagger to reduce overlap */}
-        {sortedEvents.map((event, i) => {
-          const x = scale(event._date);
-          const row = i % 3;
-          const yOffset = row === 0 ? 14 : row === 1 ? 38 : 62;
-
+    <div ref={scrollRef} className="w-full h-full">
+      {/* Mobile: vertical scrollable list */}
+      <div className="md:hidden overflow-y-auto h-full px-3 py-2 space-y-1.5">
+        {sortedEvents.map((event) => {
+          const colors = categoryColor(event.category);
           return (
-            <TimelineEventDot
+            <div
               key={event.id}
-              event={event}
-              style={{
-                left: x - 6,
-                top: yOffset,
-              }}
-              onClick={onEventClick}
-            />
+              className="flex gap-2 items-start cursor-pointer group"
+              onClick={() => onEventClick?.(event.id)}
+            >
+              <div className={cn("w-2 h-2 rounded-full shrink-0 mt-1.5", colors.dot)} />
+              <div className="min-w-0">
+                <span className="text-[9px] font-semibold text-[var(--text-muted)] uppercase tracking-wide">
+                  {formatDate(event.date)}
+                </span>
+                <p className="text-xs font-medium text-[var(--text-primary)] leading-snug truncate group-hover:text-[var(--accent)]">
+                  {event.title}
+                </p>
+              </div>
+            </div>
           );
         })}
-      </motion.div>
+      </div>
+
+      {/* Desktop: D3 horizontal timeline */}
+      <div className="hidden md:block relative h-full overflow-x-auto overflow-y-visible scrollbar-thin">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
+          className="relative h-full"
+          style={{ width: contentWidth, minWidth: "100%" }}
+        >
+          {/* Timeline axis line */}
+          <div
+            className="absolute top-8 h-px bg-[var(--border-color)]"
+            style={{ left: 40, width: contentWidth - 80 }}
+          />
+
+          {/* Tick marks */}
+          {scale.ticks(Math.max(6, Math.floor(contentWidth / 120))).map((tick, i) => (
+            <div
+              key={i}
+              className="absolute top-6 flex flex-col items-center"
+              style={{ left: scale(tick) }}
+            >
+              <div className="w-px h-4 bg-[var(--border-color)]" />
+              <span className="text-[8px] text-[var(--text-muted)] mt-0.5 whitespace-nowrap">
+                {d3.timeFormat(
+                  tick.getMonth() === 0 && tick.getDate() === 1
+                    ? "%Y"
+                    : "%b %Y"
+                )(tick)}
+              </span>
+            </div>
+          ))}
+
+          {/* Events — dots only, 3-row stagger to reduce overlap */}
+          {sortedEvents.map((event, i) => {
+            const x = scale(event._date);
+            const row = i % 3;
+            const yOffset = row === 0 ? 14 : row === 1 ? 38 : 62;
+
+            return (
+              <TimelineEventDot
+                key={event.id}
+                event={event}
+                style={{
+                  left: x - 6,
+                  top: yOffset,
+                }}
+                onClick={onEventClick}
+              />
+            );
+          })}
+        </motion.div>
+      </div>
     </div>
   );
 }

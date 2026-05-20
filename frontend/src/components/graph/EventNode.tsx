@@ -30,7 +30,7 @@ function EventNodeComponent({ data, selected }: NodeProps) {
       onMouseLeave={() => setHovered(false)}
       className={cn(
         "event-node relative rounded-xl transition-all duration-150",
-        isPrimary ? "w-[230px]" : "w-[200px]",
+        isPrimary ? "min-w-[160px] w-[200px] sm:w-[230px]" : "min-w-[140px] w-[175px] sm:w-[200px]",
         isPrimary && !selected
           ? "ring-2 ring-[var(--accent)] shadow-[0_0_20px_rgba(212,169,52,0.3)]"
           : selected
@@ -103,7 +103,7 @@ function EventNodeComponent({ data, selected }: NodeProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.97 }}
             transition={{ duration: 0.12 }}
-            className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 w-72 p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] shadow-[0_8px_30px_rgba(0,0,0,0.18)]"
+            className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 w-64 max-w-[calc(100vw-32px)] p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] shadow-[0_8px_30px_rgba(0,0,0,0.18)]"
           >
             <div className="flex items-center gap-1.5 mb-1.5">
               <span className="text-[10px]">{icon}</span>

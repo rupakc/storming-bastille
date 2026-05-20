@@ -129,7 +129,7 @@ export function ResultsLayout({
       >
         {/* Left panel: Causal Graph */}
         <div
-          className="flex flex-col overflow-hidden border-b lg:border-b-0 lg:border-r border-[var(--border-subtle)]"
+          className="flex flex-col overflow-hidden border-b lg:border-b-0 lg:border-r border-[var(--border-subtle)] min-h-[280px] lg:min-h-0"
           style={{ flex: `0 0 ${splitRatio}%` }}
         >
           <div className="flex-1 min-h-0">
@@ -161,7 +161,7 @@ export function ResultsLayout({
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-all relative",
+                  "flex-1 flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2.5 text-xs sm:text-sm font-medium transition-all relative",
                   activeTab === tab.id
                     ? "text-[var(--accent)]"
                     : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"

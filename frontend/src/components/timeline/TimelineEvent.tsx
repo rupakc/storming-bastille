@@ -41,7 +41,7 @@ export function TimelineEventDot({ event, style, onClick }: TimelineEventProps) 
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.95 }}
             transition={{ duration: 0.12 }}
-            className="absolute top-full mt-2 z-50 w-60 p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] shadow-xl pointer-events-none"
+            className="absolute top-full mt-2 z-50 w-56 max-w-[calc(100vw-24px)] p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] shadow-xl pointer-events-none"
           >
             <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-1">
               {formatDate(event.date)}

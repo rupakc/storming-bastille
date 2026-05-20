@@ -24,6 +24,12 @@ variable "alert_email" {
   type        = string
 }
 
+variable "admin_email" {
+  description = "Email address to grant GCP project Owner role (human admin)"
+  type        = string
+  default     = ""
+}
+
 variable "app_name" {
   description = "Application name used to namespace GCP resources"
   type        = string

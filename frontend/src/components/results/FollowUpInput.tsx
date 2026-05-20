@@ -31,7 +31,7 @@ export function FollowUpInput({
   return (
     <form
       onSubmit={handleSubmit}
-      className="px-6 py-4 border-t border-[var(--border-subtle)]"
+      className="px-4 sm:px-6 py-3 sm:py-4 border-t border-[var(--border-subtle)] sticky bottom-0 bg-[var(--bg-card)]"
     >
       <div className="flex items-center gap-2 bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl px-4 py-2.5 focus-within:border-[var(--accent)] transition-colors">
         <input
