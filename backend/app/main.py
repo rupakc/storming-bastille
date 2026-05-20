@@ -10,7 +10,8 @@ from app.api.routes.admin import router as admin_router
 from app.core.anthropic_client import close_client
 from app.core.config import settings
 from app.db.database import AsyncSQLiteDatabase
-from app.db.users_db import create_users_table, seed_admin
+from app.db.repository import SessionRepository
+from app.db.users_db import create_users_table, get_user_by_username, seed_admin
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level.upper(), logging.INFO),
@@ -28,6 +29,15 @@ async def lifespan(app: FastAPI):
     db = AsyncSQLiteDatabase(settings.database_path)
     await db.connect()
     app.state.db = db
+
+    # Adopt sessions that were created before user_id was threaded through the pipeline.
+    admin = get_user_by_username(settings.admin_username)
+    if admin:
+        repo = SessionRepository(db)
+        adopted = await repo.adopt_orphaned_sessions(admin["id"])
+        if adopted:
+            logger.info("Adopted %d orphaned session(s) under admin user '%s'", adopted, settings.admin_username)
+
     logger.info("Storming Bastille backend started")
     yield
     await db.disconnect()

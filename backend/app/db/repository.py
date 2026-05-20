@@ -210,6 +210,15 @@ class SessionRepository:
         )
         return await self.get_session(session_id)
 
+    async def adopt_orphaned_sessions(self, admin_user_id: str) -> int:
+        """Assign all sessions with user_id=NULL to the admin user.
+        Called at startup to recover sessions created before user_id was threaded through."""
+        result = await self.db.execute(
+            "UPDATE sessions SET user_id = ? WHERE user_id IS NULL",
+            (admin_user_id,),
+        )
+        return result.rowcount if result else 0
+
     async def get_session_context(self, session_id: str) -> list[dict]:
         rows = await self.db.fetchall(
             "SELECT query_text, narrative FROM queries WHERE session_id = ? ORDER BY sequence",
