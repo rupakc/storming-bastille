@@ -5,8 +5,7 @@ on:
     branches: [main]
   workflow_dispatch: {}   # allow health-monitor to trigger a redeploy
 
-# Only one deploy runs at a time. New pushes cancel any in-progress run
-# so we never have two Terraform processes competing for the state lock.
+# Only one deploy runs at a time. New pushes cancel any in-progress run.
 concurrency:
   group: deploy
   cancel-in-progress: true
@@ -20,6 +19,7 @@ env:
   REGION: us-central1
   APP_NAME: storming-bastille
   REGISTRY: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/storming-bastille
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   # ─── Job 1: Bootstrap ──────────────────────────────────────────────────────
@@ -31,6 +31,26 @@ jobs:
       contents: read
       id-token: write
     steps:
+      - name: Validate required secrets are set
+        run: |
+          fail=0
+          check_secret() {
+            local name="$1" value="$2"
+            if [ -z "$value" ]; then
+              echo "ERROR: GitHub Actions secret '$name' is not set or is empty"
+              fail=1
+            else
+              echo "OK: $name is set (${#value} chars)"
+            fi
+          }
+          check_secret "GCP_PROJECT_ID"    "${{ secrets.GCP_PROJECT_ID }}"
+          check_secret "GCP_SA_KEY"        "${{ secrets.GCP_SA_KEY }}"
+          check_secret "ANTHROPIC_API_KEY" "${{ secrets.ANTHROPIC_API_KEY }}"
+          check_secret "JWT_SECRET_KEY"    "${{ secrets.JWT_SECRET_KEY }}"
+          check_secret "ADMIN_PASSWORD"    "${{ secrets.ADMIN_PASSWORD }}"
+          check_secret "ALERT_EMAIL"       "${{ secrets.ALERT_EMAIL }}"
+          [ $fail -eq 0 ] || exit 1
+
       - id: auth
         uses: google-github-actions/auth@v2
         with:
@@ -100,17 +120,16 @@ jobs:
           upsert_secret "jwt-secret-key"    "${{ secrets.JWT_SECRET_KEY }}"
           upsert_secret "admin-password"    "${{ secrets.ADMIN_PASSWORD }}"
 
-  # ─── Job 2: Build, scan, and push Docker images ───────────────────────────
-  # Trivy scans both images for CRITICAL/HIGH CVEs before any push to registry.
-  # Images are only pushed if they pass the security gate.
+  # ─── Job 2: Build and push Docker images ──────────────────────────────────
+  # Uses Docker layer caching (type=gha) so dependency layers are reused across
+  # runs. Build+push is atomic — images only appear in the registry if fully pushed.
   push-images:
-    name: Build + Scan + Push Images
+    name: Build + Push Images
     runs-on: ubuntu-latest
     needs: bootstrap
     permissions:
       contents: read
       id-token: write
-      security-events: write
     steps:
       - uses: actions/checkout@v4
 
@@ -121,57 +140,34 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v2
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
 
-      # Build both images first (before any push)
-      - name: Build backend image
-        run: |
-          docker build \
-            --file backend/Dockerfile \
-            --tag "${REGISTRY}/backend:${{ github.sha }}" \
-            --tag "${REGISTRY}/backend:latest" \
-            .
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/backend:${{ github.sha }}
+            ${{ env.REGISTRY }}/backend:latest
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max
 
-      - name: Build frontend image
-        run: |
-          docker build \
-            --tag "${REGISTRY}/frontend:${{ github.sha }}" \
-            --tag "${REGISTRY}/frontend:latest" \
-            ./frontend
-        env:
-          NEXT_PUBLIC_API_URL: "__NEXT_PUBLIC_API_URL__"
-
-      # ── Ensure AR repo exists (bootstrap is idempotent; this guards against
-      #    Terraform state drift that could remove the repo between runs)
-      - name: Ensure Artifact Registry repository exists
-        run: |
-          if ! gcloud artifacts repositories describe "${APP_NAME}" \
-               --location="${REGION}" --project="${PROJECT_ID}" &>/dev/null; then
-            gcloud artifacts repositories create "${APP_NAME}" \
-              --repository-format=docker \
-              --location="${REGION}" \
-              --project="${PROJECT_ID}"
-            echo "Re-created AR repo: ${APP_NAME}"
-          else
-            echo "AR repo exists: ${APP_NAME}"
-          fi
-
-      # ── Push images ───────────────────────────────────────────────────────
-      - name: Push backend image
-        run: |
-          docker push "${REGISTRY}/backend:${{ github.sha }}"
-          docker push "${REGISTRY}/backend:latest"
-
-      - name: Push frontend image
-        run: |
-          docker push "${REGISTRY}/frontend:${{ github.sha }}"
-          docker push "${REGISTRY}/frontend:latest"
-
-      - name: Confirm pushed image tags
-        run: |
-          echo "backend:  ${REGISTRY}/backend:${{ github.sha }}"
-          echo "frontend: ${REGISTRY}/frontend:${{ github.sha }}"
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/frontend:${{ github.sha }}
+            ${{ env.REGISTRY }}/frontend:latest
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max
 
   # ─── Job 3: Terraform apply ────────────────────────────────────────────────
   terraform:
@@ -208,26 +204,6 @@ jobs:
             -backend-config="bucket=${{ secrets.GCP_PROJECT_ID }}-tf-state" \
             -backend-config="prefix=terraform/storming-bastille"
         working-directory: infrastructure/terraform
-
-      - name: Force unlock stale Terraform state lock
-        run: |
-          LOCK_DATA=$(gsutil cat \
-            "gs://${{ secrets.GCP_PROJECT_ID }}-tf-state/terraform/storming-bastille/default.tflock" 2>/dev/null \
-            || echo "")
-          if [ -n "$LOCK_DATA" ]; then
-            LOCK_ID=$(echo "$LOCK_DATA" | \
-              python3 -c "import sys,json; print(json.load(sys.stdin).get('ID',''))" 2>/dev/null \
-              || echo "")
-            if [ -n "$LOCK_ID" ]; then
-              echo "Stale lock found (ID=$LOCK_ID) — force-unlocking..."
-              terraform force-unlock -force "$LOCK_ID"
-              echo "Force unlock succeeded"
-            fi
-          else
-            echo "No stale lock found"
-          fi
-        working-directory: infrastructure/terraform
-        continue-on-error: true
 
       - name: Terraform Validate
         run: terraform validate
@@ -282,11 +258,29 @@ jobs:
         run: terraform apply -lock=false tfplan
         working-directory: infrastructure/terraform
 
-      - name: Show deployment URLs
+      - name: Verify deployment
         if: always()
         run: |
-          echo ""
           echo "=== Deployment URLs ==="
-          terraform output -raw frontend_url 2>/dev/null && echo "" || echo "frontend_url not available yet"
-          terraform output -raw backend_url  2>/dev/null && echo "" || echo "backend_url not available yet"
+          FRONTEND_URL=$(terraform output -raw frontend_url 2>/dev/null || echo "")
+          BACKEND_URL=$(terraform output -raw backend_url 2>/dev/null || echo "")
+          echo "Frontend: ${FRONTEND_URL:-[not available]}"
+          echo "Backend:  ${BACKEND_URL:-[not available]}"
+
+          if [ -z "$BACKEND_URL" ]; then
+            echo "ERROR: backend_url output is empty — Terraform apply may have failed silently"
+            exit 1
+          fi
+
+          echo ""
+          echo "Waiting for backend health check at $BACKEND_URL/health ..."
+          for attempt in $(seq 1 6); do
+            CODE=$(curl -sf -o /dev/null -w "%{http_code}" \
+                   --max-time 10 "$BACKEND_URL/health" 2>/dev/null || echo "000")
+            echo "Attempt $attempt/6: HTTP $CODE"
+            [ "$CODE" = "200" ] && { echo "Backend is live."; exit 0; }
+            [ "$attempt" -lt 6 ] && sleep 20
+          done
+          echo "ERROR: Backend did not become healthy within 2 minutes after deploy"
+          exit 1
         working-directory: infrastructure/terraform

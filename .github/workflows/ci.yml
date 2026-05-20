@@ -10,6 +10,9 @@ on:
 permissions:
   contents: read
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   # ─── Backend: lint ─────────────────────────────────────────────────────────
   backend-lint:
@@ -22,8 +25,11 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install uv
-        run: pip install --quiet uv
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
 
       - name: Install backend dependencies (with dev extras)
         run: uv sync --frozen --all-extras
@@ -48,8 +54,11 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install uv
-        run: pip install --quiet uv
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
 
       - name: Install backend dependencies (with dev extras)
         run: uv sync --frozen --all-extras
@@ -83,8 +92,11 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install uv
-        run: pip install --quiet uv
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
 
       - name: Install backend dependencies (with dev extras)
         run: uv sync --frozen --all-extras
@@ -177,7 +189,7 @@ jobs:
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: "1.2"
 
       - name: Install frontend dependencies
         run: bun install --frozen-lockfile
@@ -234,15 +246,18 @@ jobs:
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: "1.2"
 
-      - name: Install uv
-        run: pip install --quiet uv
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
 
       - name: Backend — pip-audit SBOM
         run: |
           uv sync --frozen
-          uv run pip-audit --format cyclonedx-json -o backend-sbom.json || true
+          uv run pip-audit --format json -o backend-sbom.json || true
         working-directory: backend
 
       - name: Frontend — bun audit
@@ -252,7 +267,7 @@ jobs:
 
       - name: Upload SBOMs
         uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && hashFiles('backend/backend-sbom.json') != ''
         with:
           name: dependency-sboms
           path: backend/backend-sbom.json
@@ -269,8 +284,15 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install uv
-        run: pip install --quiet uv
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
+
+      - name: Install backend dependencies (with dev extras)
+        run: uv sync --frozen --all-extras
+        working-directory: backend
 
       - name: Create .env for Docker Compose
         run: |
@@ -288,14 +310,17 @@ jobs:
         run: docker compose up -d --build --wait
         timeout-minutes: 10
 
+      - name: Dump service logs on failure
+        if: failure()
+        run: docker compose logs --no-color 2>&1
+
       - name: Backend health check
-        run: curl -f --retry 10 --retry-delay 3 http://localhost:8000/health
+        run: |
+          curl -f --retry 15 --retry-delay 3 --retry-connrefused \
+               --retry-all-errors http://localhost:8000/health
 
       - name: Run backend integration tests
-        run: |
-          uv sync --frozen --all-extras
-          uv run pytest tests/ -v -m "integration or not integration" --ignore=tests/test_placeholder.py 2>/dev/null || \
-          uv run pytest tests/ -v
+        run: uv run pytest tests/ -v --ignore=tests/test_placeholder.py
         working-directory: backend
         env:
           ANTHROPIC_API_KEY: "sk-ant-test-key-integration"
@@ -323,15 +348,12 @@ jobs:
 
       - name: Build frontend image
         run: docker build -t scan-frontend:ci ./frontend
-        env:
-          NEXT_PUBLIC_API_URL: "http://localhost:8000"
 
       # Run both scans independently so frontend always produces a SARIF
-      # even if backend has findings — exit-code is checked in a gate step below
-      # Scan results upload to GitHub Security tab for visibility.
-      # exit-code: "0" so CI is not blocked by scan findings.
+      # even if backend has findings. exit-code: "0" so CI is not blocked
+      # by scan findings — results appear in GitHub Security tab only.
       - name: Scan backend image
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         continue-on-error: true
         with:
           image-ref: scan-backend:ci
@@ -343,7 +365,7 @@ jobs:
           exit-code: "0"
 
       - name: Scan frontend image
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         continue-on-error: true
         with:
           image-ref: scan-frontend:ci
