@@ -45,3 +45,4 @@ class TimelineEvent(BaseModel):
     title: str
     category: str
     description: str = ""
+    rationale: str = ""

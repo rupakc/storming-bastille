@@ -1,8 +1,27 @@
 # Storming Bastille
 
-Storming Bastille is an AI-powered research tool that maps the causal chains behind historical events. You ask a question — "What caused the fall of the Roman Empire?" or "Why did the French Revolution happen?" — and within seconds the app starts building a structured picture of cause and effect: a streamed narrative, an interactive graph of connected events, a zoomable timeline, and a set of cited sources ranked by reliability.
+**Discover the hidden connections between historical events.**
 
-The central idea is **causal discovery**, not just fact retrieval. Most AI assistants return a paragraph. Storming Bastille returns a *graph* — nodes representing discrete historical events, edges representing causal relationships (direct causes, enabling conditions, feedback loops, consequences) with confidence scores attached to each connection. You can edit the graph by hand, save your session, and come back to it later.
+Storming Bastille is an AI-powered web application that maps causal chains between historical events. Ask any free-text question and receive a streaming analysis: a narrative backed by live web research, an interactive causal graph, a D3 timeline, and source citations — all rendered progressively.
+
+## Live Demo
+
+**[Try the live app →](https://storming-bastille-frontend-2hrxgxqboa-uc.a.run.app)**
+
+Backend API (Swagger): [https://storming-bastille-backend-2hrxgxqboa-uc.a.run.app/docs](https://storming-bastille-backend-2hrxgxqboa-uc.a.run.app/docs)
+
+---
+
+## Quick Start
+
+```bash
+git clone https://github.com/rupakc/storming-bastille.git
+cd storming-bastille
+cp backend/.env.example backend/.env
+# Edit backend/.env → set ANTHROPIC_API_KEY=sk-ant-...
+./start.sh
+# Open http://localhost:3000  (login: admin / changeme)
+```
 
 ---
 
@@ -43,15 +62,25 @@ The SourceVerifierAgent cross-checks claims against the scraped sources and assi
 
 ---
 
-## Wiki pages
+## Pages
 
-| Page | What it covers |
-|------|----------------|
-| [Architecture](Architecture) | Pipeline diagram, SSE event sequence, search injection, backup strategy |
-| [Agent System](Agent-System) | All 5 agents, models used, output schemas, confidence scoring, web search |
-| [Setup and Installation](Setup-and-Installation) | Prerequisites, local dev, environment config, first login |
+| Page | Description |
+|------|-------------|
+| [[Setup and Installation]] | Get it running locally in 5 minutes |
+| [[Architecture]] | How the 4-phase pipeline works |
+| [[Agent System]] | All five AI agents explained |
+| [[API Reference]] | REST endpoints and SSE event schema |
+| [[Deployment]] | GCP Cloud Run, Terraform, CI/CD |
+| [[Contributing]] | Code style, PR process, adding agents |
 | [Configuration](Configuration) | Every environment variable, defaults, what breaks without it |
-| [API Reference](API-Reference) | All endpoints, SSE event schema, request/response shapes |
 | [Frontend](Frontend) | Next.js structure, Zustand store, custom hooks, React Flow, D3 |
-| [Deployment](Deployment) | GCP Cloud Run, Terraform, GitHub Actions, GCS backup, cost |
 | [Security](Security) | JWT auth, scanning tools, CORS, secret management |
+
+---
+
+## Tech Stack
+
+- **Backend**: Python 3.12, FastAPI, Anthropic SDK, aiosqlite, sse-starlette
+- **Frontend**: Next.js 15, React 19, React Flow v12, D3.js, TailwindCSS v4
+- **AI Models**: Claude Haiku 4.5 (research + follow-up), Claude Sonnet (causal analysis)
+- **Infrastructure**: GCP Cloud Run, Terraform, GitHub Actions, Docker

@@ -6,6 +6,7 @@ from app.agents.causal_analyst import CausalAnalystAgent
 from app.agents.followup import FollowUpAgent
 from app.agents.graph_builder import GraphBuilderAgent
 from app.agents.historian import HistorianAgent
+from app.agents.source_verifier import SourceVerifierAgent
 from app.db.database import AsyncSQLiteDatabase
 from app.db.repository import SessionRepository
 from app.schemas.query import QueryRequest
@@ -22,6 +23,7 @@ class QueryOrchestrator:
         self.analyst = CausalAnalystAgent()
         self.graph_builder = GraphBuilderAgent()
         self.followup = FollowUpAgent()
+        self.source_verifier = SourceVerifierAgent()
 
     async def execute_query(self, request: QueryRequest) -> AsyncGenerator[dict, None]:
         # Phase 0: Setup session (fast — just DB inserts)
@@ -92,14 +94,14 @@ class QueryOrchestrator:
         # reading the narrative for several seconds. Causal analysis also starts
         # the moment events arrive, running concurrently with the rest of the text.
 
-        # Start events fetch immediately as a background task
+        # Start events fetch and web search immediately as background tasks
         events_task: asyncio.Task = asyncio.create_task(
             self.historian.get_events_async(request.query)
         )
+        search_task: asyncio.Task = asyncio.create_task(deep_search(request.query))
 
         events: list[dict] = []
         narrative_text = ""
-        sources: list[dict] = []
         causal_task: asyncio.Task | None = None
         graph_data_no_edges: dict = {}
         events_dispatched = False
@@ -213,9 +215,29 @@ class QueryOrchestrator:
         else:
             graph_data = graph_data_no_edges
 
+        # Phase 3: Source verification — runs after graph is finalised
+        # Await web search results (should be done by now; 10s fallback)
+        search_results = []
+        try:
+            search_results = await asyncio.wait_for(asyncio.shield(search_task), timeout=10.0)
+        except Exception as exc:
+            logger.warning("Search task failed for source verification: %s", exc)
+
+        verified_sources: list[dict] = []
+        if events and search_results:
+            try:
+                verified_sources = await asyncio.wait_for(
+                    self.source_verifier.verify(events, search_results),
+                    timeout=20.0,
+                )
+                if verified_sources:
+                    yield {"event": "sources", "data": {"citations": verified_sources[:15]}}
+            except Exception as exc:
+                logger.warning("Source verification failed: %s", exc)
+
         # Persist to database (non-blocking)
         asyncio.create_task(
-            self._persist_results(query_record.id, narrative_text, sources, graph_data)
+            self._persist_results(query_record.id, narrative_text, verified_sources, graph_data)
         )
 
         yield {"event": "done", "data": {"session_id": session.id, "query_id": query_record.id}}

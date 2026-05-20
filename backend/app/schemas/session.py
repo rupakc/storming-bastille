@@ -1,14 +1,16 @@
 from pydantic import BaseModel
 
+from app.schemas.graph import TimelineEvent
 from app.schemas.response import CausalGraphResponse
 
 
 class QueryRecord(BaseModel):
     id: str
-    query_text: str
+    query: str
     narrative: str = ""
     sources: list[dict] = []
     graph: CausalGraphResponse | None = None
+    timeline: list[TimelineEvent] = []
     created_at: str
     sequence: int
 

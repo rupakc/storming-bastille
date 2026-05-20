@@ -59,10 +59,11 @@ class SessionRepository:
             queries.append(
                 QueryRecord(
                     id=qr["id"],
-                    query_text=qr["query_text"],
+                    query=qr["query_text"],
                     narrative=qr["narrative"] or "",
                     sources=json.loads(qr["sources"]) if qr["sources"] else [],
                     graph=graph,
+                    timeline=graph.timeline if graph else [],
                     created_at=qr["created_at"],
                     sequence=qr["sequence"],
                 )
@@ -121,10 +122,11 @@ class SessionRepository:
         await self.db.execute("UPDATE sessions SET updated_at = ? WHERE id = ?", (now, session_id))
         return QueryRecord(
             id=query_id,
-            query_text=query_text,
+            query=query_text,
             narrative="",
             sources=[],
             graph=None,
+            timeline=[],
             created_at=now,
             sequence=sequence,
         )

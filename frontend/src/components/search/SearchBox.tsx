@@ -19,6 +19,9 @@ interface SearchBoxProps {
   autoFocus?: boolean;
 }
 
+const MIN_LEN = 10;
+const MAX_LEN = 500;
+
 export function SearchBox({
   onSubmit,
   isLoading = false,
@@ -28,6 +31,8 @@ export function SearchBox({
   const [query, setQuery] = useState(initialValue);
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const trimmedLen = query.trim().length;
 
   // Cycle through placeholders
   useEffect(() => {
@@ -53,11 +58,11 @@ export function SearchBox({
     (e: React.FormEvent) => {
       e.preventDefault();
       const trimmed = query.trim();
-      if (trimmed && !isLoading) {
+      if (trimmedLen >= MIN_LEN && trimmedLen <= MAX_LEN && !isLoading) {
         onSubmit(trimmed);
       }
     },
-    [query, isLoading, onSubmit]
+    [query, trimmedLen, isLoading, onSubmit]
   );
 
   return (
@@ -90,7 +95,7 @@ export function SearchBox({
 
           <button
             type="submit"
-            disabled={!query.trim() || isLoading}
+            disabled={trimmedLen < MIN_LEN || trimmedLen > MAX_LEN || isLoading}
             className="mr-2 p-2.5 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-40 disabled:cursor-not-allowed text-white transition-all duration-200 hover:scale-105 active:scale-95"
           >
             {isLoading ? (
@@ -101,6 +106,21 @@ export function SearchBox({
           </button>
         </div>
       </div>
+
+      {/* Character counter */}
+      {query.length > 0 && (
+        <p
+          className={`text-xs mt-1.5 text-right pr-1 ${
+            trimmedLen > MAX_LEN
+              ? "text-red-500"
+              : trimmedLen < MIN_LEN
+              ? "text-amber-500"
+              : "text-[var(--text-muted)]"
+          }`}
+        >
+          {trimmedLen} / {MAX_LEN}
+        </p>
+      )}
     </form>
   );
 }
