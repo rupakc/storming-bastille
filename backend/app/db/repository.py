@@ -197,9 +197,7 @@ class SessionRepository:
         """Find the session that owns query_id, set its title and user_id, and return it.
         Used by SaveDialog so that the auto-created (user_id=NULL) session with real content
         becomes visible to the authenticated user instead of creating an empty duplicate."""
-        row = await self.db.fetchone(
-            "SELECT session_id FROM queries WHERE id = ?", (query_id,)
-        )
+        row = await self.db.fetchone("SELECT session_id FROM queries WHERE id = ?", (query_id,))
         if row is None:
             return None
         session_id = row["session_id"]

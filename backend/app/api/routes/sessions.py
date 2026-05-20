@@ -55,9 +55,7 @@ async def create_session(
     if body.query_id:
         # Claim the auto-created session that owns this query — update its title
         # and user_id so it becomes visible to this user in their session list.
-        session = await repo.claim_session_by_query(
-            body.query_id, body.title, current_user["id"]
-        )
+        session = await repo.claim_session_by_query(body.query_id, body.title, current_user["id"])
         if session:
             return session.model_dump()
     session = await repo.create_session(body.title, user_id=current_user["id"])

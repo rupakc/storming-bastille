@@ -36,7 +36,11 @@ async def lifespan(app: FastAPI):
         repo = SessionRepository(db)
         adopted = await repo.adopt_orphaned_sessions(admin["id"])
         if adopted:
-            logger.info("Adopted %d orphaned session(s) under admin user '%s'", adopted, settings.admin_username)
+            logger.info(
+                "Adopted %d orphaned session(s) under admin user '%s'",
+                adopted,
+                settings.admin_username,
+            )
 
     logger.info("Storming Bastille backend started")
     yield

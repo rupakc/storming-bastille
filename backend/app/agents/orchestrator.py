@@ -32,13 +32,9 @@ class QueryOrchestrator:
         if request.session_id:
             session = await self.repo.get_session(request.session_id)
             if session is None:
-                session = await self.repo.create_session(
-                    title=request.query[:80], user_id=user_id
-                )
+                session = await self.repo.create_session(title=request.query[:80], user_id=user_id)
         else:
-            session = await self.repo.create_session(
-                title=request.query[:80], user_id=user_id
-            )
+            session = await self.repo.create_session(title=request.query[:80], user_id=user_id)
 
         sequence = len(session.queries) + 1
         query_record = await self.repo.save_query(session.id, request.query, sequence)
