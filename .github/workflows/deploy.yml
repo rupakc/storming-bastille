@@ -131,7 +131,7 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - id: auth
         uses: google-github-actions/auth@v2
@@ -187,7 +187,7 @@ jobs:
       TF_VAR_frontend_image:  us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/storming-bastille/frontend:${{ github.sha }}
       TF_VAR_tf_state_bucket: ${{ secrets.GCP_PROJECT_ID }}-tf-state
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - id: auth
         uses: google-github-actions/auth@v2
